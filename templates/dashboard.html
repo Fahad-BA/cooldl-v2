@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CoolDL Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+/* Reset body padding and control width */
+body {
+  background-color: #1e1e2f;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  max-width: 1920px;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Headings */
+h1, h2 {
+  color: #B39ACD;
+  margin-bottom: 10px;
+}
+
+/* Grid Layout: 2x2 fixed size */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 20px;
+  height: calc(100vh - 120px);
+}
+
+/* Each card box */
+.card {
+  background: #2a2a40;
+  padding: 15px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollable tables inside cards */
+.card table {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 14px;
+}
+
+/* Table styling */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.table th, .table td {
+  padding: 6px;
+  border-bottom: 1px solid #444;
+  text-align: left;
+  font-size: 13px;
+}
+.table th {
+  background-color: #333;
+}
+
+/* Error logs color */
+.error {
+  color: #FF6F61;
+}
+
+a {
+  color: #B39ACD;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+  </style>
+</head>
+<body>
+  <h1>CoolDL Dashboard</h1>
+
+  <div class="grid">
+    <!-- Top Left: Sources -->
+    <div class="card">
+      <h2>Top Sources</h2>
+      <div style="height: 320px;">
+  <canvas id="sourceChart" style="width:100%; height:100%;"></canvas>
+  <table class="table mt-4">
+  <tr>
+    <th>Source</th>
+    <th>Downloads</th>
+  </tr>
+  {% for s in sources %}
+  <tr>
+    <td>{{ s.source | title }}</td>
+    <td>{{ s.count }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+</div>
+    </div>
+
+    <!-- Top Right: Users -->
+
+
+
+    <!-- Bottom Left: Recent Downloads -->
+<div class="card">
+  <h2>Recent Downloads</h2>
+  <table class="table">
+    <tr>
+      <th>Link</th>
+      <th>Source</th>
+      <th>Channel</th>
+      <th>Timestamp</th>
+    </tr>
+    {% for d in downloads %}
+    <tr>
+      <td><a href="{{ d['url'] }}" target="_blank">Open</a></td>
+      <td>{{ d['source'] }}</td>
+      <td>{{ d['channel'] }}</td>
+      <td>{{ d['timestamp'] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+
+    <!-- Bottom Right: Errors -->
+    <div class="card">
+      <h2>Error Logs</h2>
+      <table class="table">
+        <tr>
+          <th>Error</th>
+          <th>Timestamp</th>
+        </tr>
+        {% for e in errors %}
+        <tr class="error">
+          <td>{{ e['error'] if 'error' in e.keys() else 'Unknown error' }}</td>
+          <td>{{ e['timestamp'] }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- نشاط الأيام الأخيرة -->
+
+
+  <script>
+    const sourceCtx = document.getElementById('sourceChart')?.getContext('2d');
+    const userCtx = document.getElementById('userChart')?.getContext('2d');
+
+if (sourceCtx) {
+  new Chart(sourceCtx, {
+    type: 'pie',
+    data: {
+      labels: [{% for row in top_sources %}"{{ row['source'] }}",{% endfor %}],
+      datasets: [{
+        data: [{% for row in top_sources %}{{ row['count'] }},{% endfor %}],
+        backgroundColor: ['#B39ACD', '#FF6F61', '#F7C1D9', '#EDEDED', '#7D5FFF']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            color: '#ccc',
+            boxWidth: 12,
+            font: {
+              size: 12
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+    if (userCtx) {
+      new Chart(userCtx, {
+        type: 'bar',
+        data: {
+          labels: [{% for row in top_users %}"{{ row['user_id'] }}",{% endfor %}],
+          datasets: [{
+            data: [{% for row in top_users %}{{ row['count'] }},{% endfor %}],
+            backgroundColor: '#B39ACD'
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+  const activityCtx = document.getElementById('activityChart')?.getContext('2d');
+
+  if (activityCtx) {
+    new Chart(activityCtx, {
+      type: 'line',
+      data: {
+        labels: [{% for a in daily_activity %}"{{ a.day }}",{% endfor %}],
+        datasets: [{
+          label: 'Downloads',
+          data: [{% for a in daily_activity %}{{ a.count }},{% endfor %}],
+          borderColor: '#B39ACD',
+          backgroundColor: 'rgba(179, 154, 205, 0.2)',
+          tension: 0.2,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          },
+          x: {
+            ticks: {
+              color: '#ccc'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#ccc'
+            }
+          }
+        }
+      }
+    });
+  }
+  </script>
+</body>
+</html>
