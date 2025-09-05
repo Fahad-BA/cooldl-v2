@@ -8,7 +8,7 @@ def clear_all():
 
     # حذف البيانات من الجداول
     c.execute("DELETE FROM downloads")
-    c.execute("DELETE FROM users")
+    # c.execute("DELETE FROM users")
     c.execute("DELETE FROM errors")
     c.execute("DELETE FROM logs")
 
