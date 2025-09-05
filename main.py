@@ -1,6 +1,6 @@
 from models import get_all_downloads, get_errors, get_top_sources
-from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Form, Request, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from downloader import download_video
@@ -9,6 +9,8 @@ import os
 import humanize
 import datetime
 from pathlib import Path
+import httpx
+import subprocess
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="SECRET_REMOVED")
@@ -80,3 +82,26 @@ async def dashboard(request: Request):
         "errors": errors,
         "top_sources": top_sources
     })
+
+@app.post("/restart-bot")
+async def restart_bot():
+    try:
+        async with httpx.AsyncClient() as client:
+            # ريستارت البوت
+            response = await client.get("http://localhost:7070/restart")
+
+            # بعدها أرسل رسالة التليجرام
+            TELEGRAM_TOKEN = "7664067205:AAHgZJTMau1Z6PKW_bhgPBhi9EbSuWikzuU"
+            CHAT_ID = "697241718"
+            message = "✅ CoolDL Bot has been restarted successfully."
+
+            await client.post(
+                f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+                data={"chat_id": CHAT_ID, "text": message}
+            )
+
+        return JSONResponse({"success": True, "message": response.text})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

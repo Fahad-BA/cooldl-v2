@@ -12,6 +12,8 @@ CAPTION = os.getenv("CAPTION")
 DB_PATH = os.getenv("DATABASE")
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 
 def extract_url(text):
     match = re.search(r'(https?://\S+)', text)
@@ -55,7 +57,7 @@ def insert_download(user_id, url, filename, source="telegram"):
     cur.execute("""
         INSERT INTO downloads (user_id, url, filename, source, timestamp)
         VALUES (?, ?, ?, ?, ?)
-    """, (user_id, url, filename, source, datetime.datetime.utcnow().isoformat()))
+    """, (user_id, url, filename, source, datetime.datetime.now(datetime.timezone.utc).isoformat()))
     conn.commit()
     conn.close()
 

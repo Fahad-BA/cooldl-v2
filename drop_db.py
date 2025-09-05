@@ -6,7 +6,7 @@ def drop_all_tables():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
 
-    tables = ['downloads', 'users', 'errors', 'logs']
+    tables = ['downloads', 'errors', 'logs']
     for table in tables:
         try:
             cur.execute(f"DROP TABLE IF EXISTS {table}")
