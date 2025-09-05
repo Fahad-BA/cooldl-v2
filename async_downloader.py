@@ -301,7 +301,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # common yt-dlp opts
     base_opts = {
         'outtmpl': outtmpl,
-        'format': 'bv*+ba/b',
+        'format': 'best',
         'noplaylist': True,
         'quiet': True,
         'logger': caplog,
