@@ -82,7 +82,7 @@ a {
 </head>
 <body>
   <h1>CoolDL Dashboard</h1>
-
+<button onclick="restartBot()">🔁 Restart CoolDL Bot</button>
   <div class="grid">
     <!-- Top Left: Sources -->
     <div class="card">
@@ -242,6 +242,15 @@ if (sourceCtx) {
       }
     });
   }
+function restartBot() {
+  if (!confirm("Are you sure you want to restart the CoolDL bot?")) return;
+  fetch("/restart-bot", {
+    method: "POST"
+  })
+    .then(res => res.json())
+    .then(data => alert(data.message || "Restart triggered"))
+    .catch(err => alert("Failed to restart bot"));
+}
   </script>
 </body>
 </html>
