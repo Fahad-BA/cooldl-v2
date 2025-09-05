@@ -6,251 +6,226 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="/static/styles.css">
   <style>
-/* Reset body padding and control width */
+/* ======= Base ======= */
+:root{
+  --bg:#1e1e2f;
+  --card:#2a2a40;
+  --fg:#fff;
+  --muted:#ccc;
+  --accent:#B39ACD;
+  --line:#444;
+  --danger:#FF6F61;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
 body {
-  background-color: #1e1e2f;
-  color: #fff;
+  background-color: var(--bg);
+  color: var(--fg);
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 20px;
   max-width: 1920px;
   height: 100vh;
   overflow-y: auto;
-  box-sizing: border-box;
 }
 
 /* Headings */
 h1, h2 {
-  color: #B39ACD;
-  margin-bottom: 10px;
+  color: var(--accent);
+  margin: 0 0 10px;
 }
 
-/* Grid Layout: 2x2 fixed size */
+/* ======= Layout ======= */
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-auto-rows: minmax(0, 1fr);
   gap: 20px;
   height: calc(100vh - 120px);
 }
 
-/* Each card box */
+/* ======= Card ======= */
 .card {
-  background: #2a2a40;
-  padding: 15px;
+  background: var(--card);
   border-radius: 12px;
-  overflow: hidden;
+  padding: 12px;
   display: flex;
-  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.card h2 {
+  font-size: 16px;
+  line-height: 1;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
 }
 
-/* Scrollable tables inside cards */
-.card table {
-  flex: 1;
-  overflow-y: auto;
-  font-size: 14px;
+/* Scrollable area inside each card */
+.card-body{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border-radius: 8px;
 }
 
-/* Table styling */
+/* ======= Table ======= */
 .table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
+  font-size: 13px;
 }
 .table th, .table td {
-  padding: 6px;
-  border-bottom: 1px solid #444;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
   text-align: left;
-  font-size: 13px;
+  vertical-align: top;
 }
-.table th {
-  background-color: #333;
+.table th { background-color: #333; position: sticky; top: 0; z-index: 1; }
+
+/* ======= Charts ======= */
+.chart-wrap{
+  height: 200px;      /* was 320px → smaller pie */
+  min-height: 160px;
+  margin-bottom: 10px;
 }
 
-/* Error logs color */
-.error {
-  color: #FF6F61;
-}
-
-a {
-  color: #B39ACD;
-  text-decoration: none;
-  font-size: 13px;
-}
-
+/* ======= Misc ======= */
+.error { color: var(--danger); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+a { color: var(--accent); text-decoration: none; font-size: 13px; word-break: break-all; }
+.small { color: var(--muted); font-size: 12px; }
   </style>
 </head>
 <body>
   <h1>CoolDL Dashboard</h1>
-<button onclick="restartBot()">🔁 Restart CoolDL Bot</button>
+  <button onclick="restartBot()">🔁 Restart CoolDL Bot</button>
+
   <div class="grid">
     <!-- Top Left: Sources -->
     <div class="card">
-      <h2>Top Sources</h2>
-      <div style="height: 320px;">
-  <canvas id="sourceChart" style="width:100%; height:100%;"></canvas>
-  <table class="table mt-4">
-  <tr>
-    <th>Source</th>
-    <th>Downloads</th>
-  </tr>
-  {% for s in sources %}
-  <tr>
-    <td>{{ s.source | title }}</td>
-    <td>{{ s.count }}</td>
-  </tr>
-  {% endfor %}
-</table>
-
-</div>
+      <div style="width:100%;display:flex;flex-direction:column;min-height:0;flex:1">
+        <h2>Top Sources</h2>
+        <div class="card-body">
+          <div class="chart-wrap">
+            <canvas id="sourceChart" style="width:100%; height:100%;"></canvas>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Top Right: Users -->
-
-
+    <!-- Top Right: (Removed Activity card) -->
 
     <!-- Bottom Left: Recent Downloads -->
-<div class="card">
-  <h2>Recent Downloads</h2>
-  <table class="table">
-    <tr>
-      <th>Link</th>
-      <th>Source</th>
-      <th>Channel</th>
-      <th>Timestamp</th>
-    </tr>
-    {% for d in downloads %}
-    <tr>
-      <td><a href="{{ d['url'] }}" target="_blank">Open</a></td>
-      <td>{{ d['source'] }}</td>
-      <td>{{ d['channel'] }}</td>
-      <td>{{ d['timestamp'] }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
-
+    <div class="card">
+      <div style="width:100%;display:flex;flex-direction:column;min-height:0;flex:1">
+        <h2>Recent Downloads</h2>
+        <div class="card-body">
+          <table class="table" id="recentTable">
+            <tr>
+              <th>File</th>
+              <th>By</th>
+              <th>Source</th>
+              <th>Link</th>
+              <th>Timestamp</th>
+            </tr>
+            {% for d in downloads %}
+            <tr>
+              <td>{{ d['filename'] if d.get('filename') else '-' }}</td>
+              <td>{{ d.get('name','web') }}</td>
+              <td>{{ d['source'] }}</td>
+              <td><a href="{{ d['url'] }}" target="_blank">Open</a></td>
+              <td class="ts" data-ts="{{ d['timestamp']|e }}">{{ d['timestamp'] }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+    </div>
 
     <!-- Bottom Right: Errors -->
     <div class="card">
-      <h2>Error Logs</h2>
-      <table class="table">
-        <tr>
-          <th>Error</th>
-          <th>Timestamp</th>
-        </tr>
-        {% for e in errors %}
-        <tr class="error">
-          <td>{{ e['error'] if 'error' in e.keys() else 'Unknown error' }}</td>
-          <td>{{ e['timestamp'] }}</td>
-        </tr>
-        {% endfor %}
-      </table>
+      <div style="width:100%;display:flex;flex-direction:column;min-height:0;flex:1">
+        <h2>Error Logs</h2>
+        <div class="card-body">
+          <table class="table" id="errorsTable">
+            <tr>
+              <th>Error</th>
+              <th>Timestamp</th>
+            </tr>
+            {% for e in errors %}
+            <tr class="error">
+              <td>{{ e['error'] if 'error' in e.keys() else 'Unknown error' }}</td>
+              <td class="ts" data-ts="{{ e['timestamp']|e }}">{{ e['timestamp'] }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- نشاط الأيام الأخيرة -->
-
-
   <script>
-    const sourceCtx = document.getElementById('sourceChart')?.getContext('2d');
-    const userCtx = document.getElementById('userChart')?.getContext('2d');
-
-if (sourceCtx) {
-  new Chart(sourceCtx, {
-    type: 'pie',
-    data: {
-      labels: [{% for row in top_sources %}"{{ row['source'] }}",{% endfor %}],
-      datasets: [{
-        data: [{% for row in top_sources %}{{ row['count'] }},{% endfor %}],
-        backgroundColor: ['#B39ACD', '#FF6F61', '#F7C1D9', '#EDEDED', '#7D5FFF']
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: {
-            color: '#ccc',
-            boxWidth: 12,
-            font: {
-              size: 12
-            }
-          }
-        }
-      }
+    function restartBot() {
+      if (!confirm("Are you sure you want to restart the CoolDL bot?")) return;
+      fetch("/restart-bot", { method: "POST" })
+        .then(res => res.json())
+        .then(data => alert(data.message || "Restart triggered"))
+        .catch(() => alert("Failed to restart bot"));
     }
-  });
-}
 
-    if (userCtx) {
-      new Chart(userCtx, {
-        type: 'bar',
+    // Pie chart (smaller radius)
+    const sourceCtx = document.getElementById('sourceChart')?.getContext('2d');
+    if (sourceCtx) {
+      new Chart(sourceCtx, {
+        type: 'pie',
         data: {
-          labels: [{% for row in top_users %}"{{ row['user_id'] }}",{% endfor %}],
+          labels: [{% for row in top_sources %}"{{ row['source'] }}",{% endfor %}],
           datasets: [{
-            data: [{% for row in top_users %}{{ row['count'] }},{% endfor %}],
-            backgroundColor: '#B39ACD'
+            data: [{% for row in top_sources %}{{ row['count'] }},{% endfor %}],
+            backgroundColor: ['#B39ACD', '#FF6F61', '#F7C1D9', '#EDEDED', '#7D5FFF']
           }]
         },
         options: {
-          scales: {
-            y: { beginAtZero: true }
+          responsive: true,
+          maintainAspectRatio: false,
+          radius: '70%',                 // smaller circle
+          layout: { padding: 0 },
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#ccc', boxWidth: 10, font: { size: 11 } }
+            }
           }
         }
       });
     }
 
-  const activityCtx = document.getElementById('activityChart')?.getContext('2d');
-
-  if (activityCtx) {
-    new Chart(activityCtx, {
-      type: 'line',
-      data: {
-        labels: [{% for a in daily_activity %}"{{ a.day }}",{% endfor %}],
-        datasets: [{
-          label: 'Downloads',
-          data: [{% for a in daily_activity %}{{ a.count }},{% endfor %}],
-          borderColor: '#B39ACD',
-          backgroundColor: 'rgba(179, 154, 205, 0.2)',
-          tension: 0.2,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true
-          },
-          x: {
-            ticks: {
-              color: '#ccc'
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            labels: {
-              color: '#ccc'
-            }
-          }
+    // Human-readable timestamps: "YYYY/MM/DD, h:mm AM/PM"
+    (function humanizeTimestamps(){
+      const fmt = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: 'numeric', minute: '2-digit', hour12: true
+      });
+      document.querySelectorAll('td.ts').forEach(td => {
+        const raw = td.getAttribute('data-ts') || td.textContent;
+        let d = new Date(raw);
+        // fallback: try parse without timezone if failed
+        if (isNaN(d.getTime())) {
+          // try appending 'Z' for ISO naive
+          d = new Date(raw + 'Z');
         }
-      }
-    });
-  }
-function restartBot() {
-  if (!confirm("Are you sure you want to restart the CoolDL bot?")) return;
-  fetch("/restart-bot", {
-    method: "POST"
-  })
-    .then(res => res.json())
-    .then(data => alert(data.message || "Restart triggered"))
-    .catch(err => alert("Failed to restart bot"));
-}
+        if (!isNaN(d.getTime())) {
+          const parts = fmt.formatToParts(d);
+          // build YYYY/MM/DD, h:mm AM/PM
+          const y = parts.find(p=>p.type==='year')?.value ?? '';
+          const m = parts.find(p=>p.type==='month')?.value ?? '';
+          const day = parts.find(p=>p.type==='day')?.value ?? '';
+          const hour = parts.find(p=>p.type==='hour')?.value ?? '';
+          const minute = parts.find(p=>p.type==='minute')?.value ?? '';
+          const dayPeriod = parts.find(p=>p.type==='dayPeriod')?.value?.toUpperCase() ?? '';
+          td.textContent = `${y}/${m}/${day}, ${hour}:${minute} ${dayPeriod}`;
+        }
+      });
+    })();
   </script>
 </body>
 </html>
