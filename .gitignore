@@ -7,8 +7,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# ignore sqlite database 
 cooldl.db
-cooldl.db*
+cooldl.db-*
+*.sqlite
+*.sqlite3
+*.logs
 # C extensions
 *.so
 
