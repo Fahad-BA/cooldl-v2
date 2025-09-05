@@ -8,6 +8,7 @@ __pycache__/
 *$py.class
 
 cooldl.db
+cooldl.db*
 # C extensions
 *.so
 
