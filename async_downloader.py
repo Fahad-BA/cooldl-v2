@@ -396,7 +396,7 @@ if __name__ == '__main__':
     ensure_tables()
     if not BOT_TOKEN:
         raise SystemExit("BOT_TOKEN env var is required")
-    req = HTTPXRequest(connect_timeout=20, read_timeout=180)
+    req = HTTPXRequest(connect_timeout=20, read_timeout=30)
     app = ApplicationBuilder().token(BOT_TOKEN).request(req).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
