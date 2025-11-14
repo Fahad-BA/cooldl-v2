@@ -316,6 +316,10 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
         'outtmpl': outtmpl,
         'format': 'bv*+ba/b',                 # غيّرها إذا تبغى MP4 فقط
         'recode-video': 'mp4',
+        'postprocessors': [{
+            'key': 'FFmpegVideoRemuxer',
+            'preferedformat': 'mp4',
+        }],
         'noplaylist': True,
         'quiet': True,
         'logger': caplog,
