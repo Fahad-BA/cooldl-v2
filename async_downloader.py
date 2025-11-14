@@ -212,6 +212,53 @@ async def send_with_retry(factory, retries=3, backoff_base=2):
             if i == retries - 1: raise
             await asyncio.sleep(backoff_base * (i + 1))
 
+# إرسال موحّد: للمستخدم أولًا كوثيقة (أسرع)، ثم نسخ للقناة بدون رفع ثاني
+async def deliver_file(final_path: Path, source: str, chat_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    sent_to_user = None
+
+    async def _send_doc(to_chat):
+        return await send_with_retry(lambda: context.bot.send_document(
+            chat_id=to_chat, document=final_path.open("rb"),
+            **doc_args(final_path.stem)
+        ))
+
+    async def _send_vid(to_chat):
+        return await send_with_retry(lambda: context.bot.send_video(
+            chat_id=to_chat, video=final_path.open("rb"),
+            **video_args(final_path.stem)
+        ))
+
+    # 1) للمستخدم أولاً – document أسرع وأقل timeouts
+    try:
+        if source == "TikTok":
+            sent_to_user = await _send_doc(chat_id)
+        else:
+            try:
+                sent_to_user = await _send_doc(chat_id)
+            except Exception:
+                sent_to_user = await _send_vid(chat_id)
+    except TimedOut:
+        # محاولة ثانية أخيرة كوثيقة دائماً
+        sent_to_user = await _send_doc(chat_id)
+
+    # 2) للقناة بنسخ نفس الرسالة (بدون رفع)
+    if CHANNEL_ID and sent_to_user:
+        try:
+            await context.bot.copy_message(
+                chat_id=CHANNEL_ID,
+                from_chat_id=chat_id,
+                message_id=sent_to_user.message_id
+            )
+        except TimedOut:
+            # محاولة ثانية
+            await context.bot.copy_message(
+                chat_id=CHANNEL_ID,
+                from_chat_id=chat_id,
+                message_id=sent_to_user.message_id
+            )
+
+    return sent_to_user is not None
+
 # ================== HANDLERS ==================
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Send me a video link to download.")
@@ -238,7 +285,7 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     # === Cache ===
     cached = find_cached_file(cache_key)
     if cached:
-        # 1) أرسل ميتاداتا للقناة (غير قاتل)
+        # ميتاداتا للقناة (غير قاتل)
         if CHANNEL_ID:
             try:
                 await context.bot.send_message(
@@ -249,41 +296,11 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
             except Exception as e:
                 logging.warning(f"send meta to channel failed (cache): {e}")
 
-        # 2) ارفع للقناة أولاً ثم انسخ للمستخدم (لتفادي إعادة الرفع وفشل الإرسال)
-        sent_msg = None
-        try:
-            if CHANNEL_ID:
-                if is_tiktok:
-                    sent_msg = await send_with_retry(lambda: context.bot.send_document(chat_id=CHANNEL_ID, document=cached.open("rb"), **doc_args()))
-                else:
-                    try:
-                        sent_msg = await send_with_retry(lambda: context.bot.send_video(chat_id=CHANNEL_ID, video=cached.open("rb"), **video_args()))
-                    except Exception:
-                        sent_msg = await send_with_retry(lambda: context.bot.send_document(chat_id=CHANNEL_ID, document=cached.open("rb"), **doc_args()))
-        except Exception as e:
-            logging.warning(f"archive cached file failed: {e}")
+        ok = await deliver_file(cached, source, chat_id, context)
+        if not ok:
+            try: await context.bot.send_message(chat_id=chat_id, text="⚠️ Sending failed.")
+            except Exception: pass
 
-        # 3) نسخ للمستخدم باستخدام file_id إن أمكن، وإلا أرسل الملف مباشرة
-        try:
-            if sent_msg is not None:
-                await context.bot.copy_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=sent_msg.message_id)
-            else:
-                # لا توجد قناة؟ أرسل له مباشرة
-                if is_tiktok:
-                    await send_with_retry(lambda: context.bot.send_document(chat_id=chat_id, document=cached.open("rb"), **doc_args(cached.stem)))
-                else:
-                    try:
-                        await send_with_retry(lambda: context.bot.send_video(chat_id=chat_id, video=cached.open("rb"), **video_args(cached.stem)))
-                    except Exception:
-                        await send_with_retry(lambda: context.bot.send_document(chat_id=chat_id, document=cached.open("rb"), **doc_args(cached.stem)))
-        except Exception as e:
-            logging.exception(f"sending cached to user failed: {e}")
-            try:
-                await context.bot.send_message(chat_id=chat_id, text="⚠️ Sending failed.")
-            except Exception:
-                pass
-
-        # 4) سجّل
         insert_download(user.id, cache_key, cached.name, source, chat_id, name, username, file_id)
         if raw_url != cache_key:
             insert_download(user.id, raw_url, cached.name, source, chat_id, name, username, file_id)
@@ -298,6 +315,7 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     ydl_opts = {
         'outtmpl': outtmpl,
         'format': 'bv*+ba/b',                 # غيّرها إذا تبغى MP4 فقط
+        'recode-video': 'mp4',
         'noplaylist': True,
         'quiet': True,
         'logger': caplog,
@@ -353,7 +371,7 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     except Exception as e:
         logging.warning(f"delete progress msg failed: {e}")
 
-    # 1) أرسل ميتاداتا للقناة
+    # ميتاداتا للقناة (اختياري)
     if CHANNEL_ID:
         try:
             await context.bot.send_message(
@@ -364,40 +382,12 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
         except Exception as e:
             logging.warning(f"send meta to channel failed: {e}")
 
-    # 2) ارفع الملف للقناة أولاً للحصول على file_id
-    sent_msg = None
-    if CHANNEL_ID:
-        try:
-            if source == "TikTok":
-                sent_msg = await send_with_retry(lambda: context.bot.send_document(chat_id=CHANNEL_ID, document=final_path.open("rb"), **doc_args()))
-            else:
-                try:
-                    sent_msg = await send_with_retry(lambda: context.bot.send_video(chat_id=CHANNEL_ID, video=final_path.open("rb"), **video_args()))
-                except Exception:
-                    sent_msg = await send_with_retry(lambda: context.bot.send_document(chat_id=CHANNEL_ID, document=final_path.open("rb"), **doc_args()))
-        except Exception as e:
-            logging.warning(f"archive to channel failed: {e}")
+    ok = await deliver_file(final_path, source, chat_id, context)
+    if not ok:
+        try: await context.bot.send_message(chat_id=chat_id, text="⚠️ Sending failed.")
+        except Exception: pass
 
-    # 3) انسخ للمستخدم إن توفر sent_msg، وإلا أرسل الملف مباشرة
-    try:
-        if sent_msg is not None:
-            await context.bot.copy_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=sent_msg.message_id)
-        else:
-            if source == "TikTok":
-                await send_with_retry(lambda: context.bot.send_document(chat_id=chat_id, document=final_path.open("rb"), **doc_args(final_path.stem)))
-            else:
-                try:
-                    await send_with_retry(lambda: context.bot.send_video(chat_id=chat_id, video=final_path.open("rb"), **video_args(final_path.stem)))
-                except Exception:
-                    await send_with_retry(lambda: context.bot.send_document(chat_id=chat_id, document=final_path.open("rb"), **doc_args(final_path.stem)))
-    except Exception as e:
-        logging.exception(f"sending to user failed: {e}")
-        try:
-            await context.bot.send_message(chat_id=chat_id, text="⚠️ Sending failed.")
-        except Exception:
-            pass
-
-    # 4) سجّل
+    # سجّل
     try:
         insert_download(user.id, cache_key, final_path.name, source, chat_id, name, username, file_id)
         if raw_url != cache_key:
@@ -426,7 +416,8 @@ if __name__ == '__main__':
     ensure_tables()
     if not BOT_TOKEN:
         raise SystemExit("BOT_TOKEN env var is required")
-    req = HTTPXRequest(connect_timeout=20, read_timeout=60)
+    # مهلة أعلى لتقليل Timeouts أثناء الإرسال
+    req = HTTPXRequest(connect_timeout=20, read_timeout=180)
     app = ApplicationBuilder().token(BOT_TOKEN).request(req).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
