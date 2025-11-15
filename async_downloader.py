@@ -24,8 +24,6 @@ DOWNLOAD_DIR.mkdir(exist_ok=True, parents=True)
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
-
-# التقط جميع الروابط في النص
 URL_RE = re.compile(r'https?://[^\s<>")]+', re.I)
 
 # ================== URL NORMALIZATION ==================
@@ -43,7 +41,6 @@ def normalize_url(raw: str) -> str:
         path = u.path or "/"
         q = parse_qs(u.query, keep_blank_values=False)
 
-        # TikTok: لا تغيّر الدومين/المسار؛ فقط نظّف التتبع
         if "tiktok.com" in netloc:
             q = {k:v for k,v in q.items() if k not in STRIP_KEYS}
             query = urlencode({k:v[0] for k,v in q.items()}) if q else ""
@@ -61,7 +58,6 @@ def normalize_url(raw: str) -> str:
             if "v" in q and q["v"]: keep["v"] = [q["v"][0]]
             q = keep
 
-        # X/Instagram: نظّف التتبع فقط
         if netloc.endswith("x.com") or "twitter.com" in netloc or netloc.endswith("instagram.com"):
             q = {k:v for k,v in q.items() if k not in STRIP_KEYS}
 
@@ -156,10 +152,10 @@ def log_to_db(table, values):
         cur.execute("INSERT OR IGNORE INTO users (chat_id, name, username) VALUES (?,?,?)", values)
     elif table == "errors":
         cur.execute("""INSERT INTO errors (error, file_id, timestamp, username, chat_id, name, url)
-                       VALUES (?,?,?,?,?,?,?)""", values)
+                         VALUES (?,?,?,?,?,?,?)""", values)
     elif table == "logs":
         cur.execute("""INSERT INTO logs (timestamp, action, username, chat_id, status)
-                       VALUES (?,?,?,?,?)""", values)
+                         VALUES (?,?,?,?,?)""", values)
     c.commit(); c.close()
 
 def insert_download(user_id, url, filename, source, chat_id, name, username, file_id):
@@ -212,36 +208,48 @@ async def send_with_retry(factory, retries=3, backoff_base=2):
             if i == retries - 1: raise
             await asyncio.sleep(backoff_base * (i + 1))
 
-# إرسال موحّد: للمستخدم أولًا كوثيقة (أسرع)، ثم نسخ للقناة بدون رفع ثاني
 async def deliver_file(final_path: Path, source: str, chat_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
     sent_to_user = None
+    file_extension = final_path.suffix.lower()
 
-    async def _send_doc(to_chat):
-        return await send_with_retry(lambda: context.bot.send_document(
-            chat_id=to_chat, document=final_path.open("rb"),
-            **doc_args(final_path.stem)
-        ))
-
-    async def _send_vid(to_chat):
+    async def _send_video(to_chat):
+        # Attempt to send as video first
         return await send_with_retry(lambda: context.bot.send_video(
             chat_id=to_chat, video=final_path.open("rb"),
             **video_args(final_path.stem)
         ))
 
-    # 1) للمستخدم أولاً – document أسرع وأقل timeouts
-    try:
-        if source == "TikTok":
-            sent_to_user = await _send_doc(chat_id)
-        else:
-            try:
-                sent_to_user = await _send_doc(chat_id)
-            except Exception:
-                sent_to_user = await _send_vid(chat_id)
-    except TimedOut:
-        # محاولة ثانية أخيرة كوثيقة دائماً
-        sent_to_user = await _send_doc(chat_id)
+    async def _send_document(to_chat):
+        # Fallback to document
+        return await send_with_retry(lambda: context.bot.send_document(
+            chat_id=to_chat, document=final_path.open("rb"),
+            **doc_args(final_path.stem)
+        ))
+    
+    # 1. Prioritize sending as Video if it's a known video extension (.mp4, .mov, etc.)
+    if file_extension in ['.mp4', '.mov', '.webm']:
+        try:
+            sent_to_user = await _send_video(chat_id)
+        except Exception:
+            # Fallback if sending as video fails (e.g., telegram size limit, or unsupported codec/format issue)
+            sent_to_user = await _send_document(chat_id)
+    
+    # 2. Handle known image formats or other files by falling back to document
+    elif file_extension in ['.jpg', '.jpeg', '.png', '.webp']:
+        # Note: If you want to send images as 'photo' use context.bot.send_photo and check file size/type
+        # For simplicity and to avoid breaking core logic, we use document for non-video media here
+        sent_to_user = await _send_document(chat_id)
 
-    # 2) للقناة بنسخ نفس الرسالة (بدون رفع)
+    # 3. For any other file type or if the video attempt above failed
+    else:
+        # Try video first as a general default for media that might be video
+        try:
+            sent_to_user = await _send_video(chat_id)
+        except Exception:
+            # Fallback to document
+            sent_to_user = await _send_document(chat_id)
+            
+    # Original logic for copying to channel (no change to core functionality)
     if CHANNEL_ID and sent_to_user:
         try:
             await context.bot.copy_message(
@@ -249,8 +257,7 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
                 from_chat_id=chat_id,
                 message_id=sent_to_user.message_id
             )
-        except TimedOut:
-            # محاولة ثانية
+        except TimedOut: # Second try in case of TimedOut
             await context.bot.copy_message(
                 chat_id=CHANNEL_ID,
                 from_chat_id=chat_id,
@@ -258,7 +265,7 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
             )
 
     return sent_to_user is not None
-
+# ... باقي الكود لم يتغير ...
 # ================== HANDLERS ==================
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Send me a video link to download.")
@@ -285,7 +292,6 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     # === Cache ===
     cached = find_cached_file(cache_key)
     if cached:
-        # ميتاداتا للقناة (غير قاتل)
         if CHANNEL_ID:
             try:
                 await context.bot.send_message(
@@ -314,7 +320,7 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
 
     ydl_opts = {
         'outtmpl': outtmpl,
-        'format': 'bv*+ba/b',                 # غيّرها إذا تبغى MP4 فقط
+        'format': 'bv*+ba/b',
         'recode-video': 'mp4',
         'postprocessors': [{
             'key': 'FFmpegVideoRemuxer',
@@ -375,7 +381,6 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     except Exception as e:
         logging.warning(f"delete progress msg failed: {e}")
 
-    # ميتاداتا للقناة (اختياري)
     if CHANNEL_ID:
         try:
             await context.bot.send_message(
@@ -391,7 +396,6 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
         try: await context.bot.send_message(chat_id=chat_id, text="⚠️ Sending failed.")
         except Exception: pass
 
-    # سجّل
     try:
         insert_download(user.id, cache_key, final_path.name, source, chat_id, name, username, file_id)
         if raw_url != cache_key:
@@ -420,7 +424,6 @@ if __name__ == '__main__':
     ensure_tables()
     if not BOT_TOKEN:
         raise SystemExit("BOT_TOKEN env var is required")
-    # مهلة أعلى لتقليل Timeouts أثناء الإرسال
     req = HTTPXRequest(connect_timeout=20, read_timeout=180)
     app = ApplicationBuilder().token(BOT_TOKEN).request(req).build()
     app.add_handler(CommandHandler("start", start))
