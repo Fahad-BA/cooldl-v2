@@ -120,6 +120,11 @@ def _download_with_ydl(url: str) -> str:
         }
     }
     
+    # Add TikTok impersonation for age-restricted content
+    if 'tiktok.com' in url or 'vm.tiktok.com' in url or 'vt.tiktok.com' in url:
+        opts['extractor_args'] = {'tiktok': ['impersonate=webkit']}
+        opts['http_headers']['Referer'] = 'https://www.tiktok.com/'
+    
     with yt_dlp.YoutubeDL(opts) as ydl:
         info = ydl.extract_info(url, download=True)
         fp = Path(ydl.prepare_filename(info))
