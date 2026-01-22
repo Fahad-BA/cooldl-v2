@@ -411,10 +411,14 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
             'retries': 5,
             'concurrent_fragment_downloads': 4,
             'socket_timeout': 30,
-            'http_headers': {'User-Agent': 'Mozilla/5.0'}
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         }
+        
+        # Add TikTok impersonation for age-restricted content
         if is_tiktok:
+            ydl_opts['extractor_args'] = {'tiktok': ['impersonate=webkit']}
             ydl_opts['http_headers']['Referer'] = 'https://www.tiktok.com/'
+        
         if COOKIES_FILE and os.path.exists(COOKIES_FILE):
             ydl_opts['cookiefile'] = COOKIES_FILE
 
