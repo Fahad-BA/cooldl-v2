@@ -195,8 +195,8 @@ def log_to_db(table, values):
     try:
         if table == "downloads":
             cur.execute("""INSERT INTO downloads
-                (user_id, url, filename, source, timestamp, chat_id, name, username, file_id, file_size)
-                VALUES (?,?,?,?,?,?,?,?,?,?)""", values)
+                (user_id, url, filename, source, timestamp, chat_id, name, username, file_id, file_size, session)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)""", values)
         elif table == "users":
             cur.execute("INSERT OR IGNORE INTO users (chat_id, name, username, created_at) VALUES (?,?,?,?)", values)
         elif table == "errors":
@@ -211,12 +211,12 @@ def log_to_db(table, values):
     finally:
         c.close()
 
-def insert_download(user_id, url, filename, source, chat_id, name, username, file_id):
+def insert_download(user_id, url, filename, source, chat_id, name, username, file_id, session=None):
     try:
         file_size = (DOWNLOAD_DIR / filename).stat().st_size if (DOWNLOAD_DIR / filename).exists() else 0
     except:
         file_size = 0
-    log_to_db("downloads", (user_id, url, filename, source, now_utc_iso(), chat_id, name, username, file_id, file_size))
+    log_to_db("downloads", (user_id, url, filename, source, now_utc_iso(), chat_id, name, username, file_id, file_size, session))
 
 def find_cached_file(url: str) -> Optional[Path]:
     c = conn(); cur = c.cursor()
@@ -385,9 +385,9 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
             except Exception: pass
 
         record_download(chat_id)
-        insert_download(user.id, cache_key, cached.name, source, chat_id, name, username, file_id)
+        insert_download(user.id, cache_key, cached.name, source, chat_id, name, username, file_id, None)
         if raw_url != cache_key:
-            insert_download(user.id, raw_url, cached.name, source, chat_id, name, username, file_id)
+            insert_download(user.id, raw_url, cached.name, source, chat_id, name, username, file_id, None)
         return
 
     # === Download (with semaphore) ===
@@ -489,9 +489,9 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
 
         record_download(chat_id)
         try:
-            insert_download(user.id, cache_key, final_path.name, source, chat_id, name, username, file_id)
+            insert_download(user.id, cache_key, final_path.name, source, chat_id, name, username, file_id, None)
             if raw_url != cache_key:
-                insert_download(user.id, raw_url, final_path.name, source, chat_id, name, username, file_id)
+                insert_download(user.id, raw_url, final_path.name, source, chat_id, name, username, file_id, None)
             log_to_db("logs", (now_local(), "Downloaded", username, chat_id, "Success"))
         except Exception as e:
             logging.warning(f"recording download failed: {e}")
