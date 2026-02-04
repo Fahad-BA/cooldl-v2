@@ -65,13 +65,13 @@ def get_errors(limit: int = 50):
     conn = get_connection()
     cur = conn.cursor()
     rows = _fetch(cur, """
-        SELECT COALESCE(error,'Unknown error') AS error, timestamp
+        SELECT COALESCE(error,'Unknown error') AS error, timestamp, file_id
         FROM errors
         ORDER BY rowid DESC
         LIMIT ?
     """, (limit,))
     conn.close()
-    return [{"error": r["error"], "timestamp": r["timestamp"]} for r in rows]
+    return [{"error": r["error"], "timestamp": r["timestamp"], "file_id": r["file_id"]} for r in rows]
 
 def get_top_sources(limit: int = 5):
     conn = get_connection()
