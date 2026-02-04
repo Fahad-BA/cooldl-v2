@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CoolDL Dashboard - Modern</title>
+  <title>CoolDL Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/static/tailwind.css">
@@ -638,6 +638,7 @@
             <table class="table" id="errorLogsTable">
               <thead>
                 <tr>
+                  <th><i class="fas fa-hashtag"></i> Ref #</th>
                   <th><i class="fas fa-bug"></i> Error</th>
                   <th><i class="fas fa-clock"></i> Timestamp</th>
                 </tr>
@@ -645,6 +646,9 @@
               <tbody>
                 {% for e in errors %}
                 <tr>
+                  <td>
+                    <span class="badge badge-error">{{ e['file_id'] if 'file_id' in e.keys() else 'N/A' }}</span>
+                  </td>
                   <td>
                     <div class="error-text">
                       {{ e['error'] if 'error' in e.keys() else 'Unknown error' }}
@@ -786,7 +790,6 @@
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
         hour12: false
       });
 
@@ -847,14 +850,13 @@
           day: '2-digit',
           hour: '2-digit',
           minute: '2-digit',
-          second: '2-digit',
           hour12: false
         });
         lastUpdateEl.textContent = fmt.format(now);
       }
     });
 
-    // Auto-refresh every 30 seconds (optional)
+    // Auto-refresh disabled - remove seconds from timestamps and add error reference numbers
     // setInterval(refreshData, 30000);
   </script>
 </body>

@@ -100,7 +100,7 @@ async def dashboard(request: Request):
         conn.close()
 
     from datetime import datetime
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     tpl = Path("templates/dashboard.html")
     if not tpl.exists():
