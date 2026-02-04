@@ -42,16 +42,21 @@ user_download_tracker = defaultdict(list)  # chat_id -> [timestamps]
 
 # ================== URL NORMALIZATION ==================
 STRIP_KEYS = {"utm_source","utm_medium","utm_campaign","utm_term","utm_content","utm_id",
-              "_t","_r","s","si","igsh","igshid","feature","fbclid"}
+              "_t","_r","s","si","igsh","igshid","feature","fbclid","app", "m",
+              "cshid", "pp", "sns", "share"}
 
 def normalize_url(raw: str) -> str:
-    """Normalize without breaking short TikTok links. Canonicalize YouTube. Strip tracking elsewhere."""
+    """Enhanced URL normalization with better YouTube shorts and mobile domain handling."""
     try:
         raw = raw.strip()
         u = urlparse(raw)
         scheme = "https"
         netloc = (u.netloc or "").lower()
-        if netloc.startswith("www."): netloc = netloc[4:]
+        
+        # Normalize mobile and www subdomains
+        if netloc.startswith("www.") or netloc.startswith("m.") or netloc.startswith("mobile."):
+            netloc = netloc.split(".", 1)[1]
+        
         path = u.path or "/"
         q = parse_qs(u.query, keep_blank_values=False)
 
@@ -65,10 +70,20 @@ def normalize_url(raw: str) -> str:
             netloc = "youtube.com"; path = "/watch"; q = {"v":[vid]}
         elif netloc.endswith("youtube.com"):
             parts = [p for p in path.split("/") if p]
+            
+            # Handle shorts URLs
             if len(parts) >= 2 and parts[0] == "shorts":
                 vid = parts[1]; path = "/watch"; q = {"v":[vid]}
+            # Handle live URLs
+            elif len(parts) >= 2 and parts[0] == "live":
+                vid = parts[1]; path = "/watch"; q = {"v":[vid], "feature": ["live"]}
+            
+            # Keep only essential YouTube parameters
             keep = {}
             if "v" in q and q["v"]: keep["v"] = [q["v"][0]]
+            if "list" in q and q["list"]: keep["list"] = [q["list"][0]]
+            if "t" in q and q["t"]: keep["t"] = [q["t"][0]]
+            if "index" in q and q["index"]: keep["index"] = [q["index"][0]]
             q = keep
 
         if netloc.endswith("x.com") or "twitter.com" in netloc or netloc.endswith("instagram.com"):
@@ -80,6 +95,10 @@ def normalize_url(raw: str) -> str:
     except Exception as e:
         logger.warning(f"URL normalization error: {e}")
         return raw.strip()
+
+def is_youtube_shorts(url: str) -> bool:
+    """Check if URL is a YouTube shorts video."""
+    return "shorts" in url.lower() or ("youtu.be" in url and len(url) > 30)
 
 def strip_query(u: str) -> str:
     try:
