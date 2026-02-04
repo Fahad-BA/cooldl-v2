@@ -1,4 +1,4 @@
-from models import get_all_downloads, get_errors, get_top_sources
+from models import get_all_downloads, get_errors, get_top_sources, get_connection
 from fastapi import FastAPI, Form, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -73,9 +73,34 @@ async def dashboard(request: Request):
     if not request.session.get("auth"):
         return RedirectResponse("/login", status_code=302)
 
+    # Get real database statistics
     downloads = get_all_downloads()
     errors = get_errors()
     top_sources = get_top_sources()
+    
+    # Get actual counts from database
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT COUNT(*) FROM downloads")
+        total_downloads_db = cur.fetchone()[0]
+        
+        cur.execute("SELECT COUNT(*) FROM errors")
+        total_errors_db = cur.fetchone()[0]
+        
+        cur.execute("SELECT COUNT(*) FROM (SELECT source FROM downloads GROUP BY source)")
+        total_sources_db = cur.fetchone()[0]
+        
+        total_operations = total_downloads_db + total_errors_db
+        if total_operations > 0:
+            success_rate = (total_downloads_db / total_operations) * 100
+        else:
+            success_rate = 100.0
+    finally:
+        conn.close()
+
+    from datetime import datetime
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     tpl = Path("templates/dashboard.html")
     if not tpl.exists():
@@ -90,7 +115,12 @@ async def dashboard(request: Request):
         "request": request,
         "downloads": downloads,
         "errors": errors,
-        "top_sources": top_sources
+        "top_sources": top_sources,
+        "now": now,
+        "total_downloads": total_downloads_db,
+        "total_errors": total_errors_db,
+        "total_sources": total_sources_db,
+        "success_rate": success_rate
     })
 
 @app.post("/restart-bot")

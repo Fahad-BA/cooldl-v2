@@ -2,230 +2,860 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CoolDL Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoolDL Dashboard - Modern</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/tailwind.css">
   <style>
-/* ======= Base ======= */
-:root{
-  --bg:#1e1e2f;
-  --card:#2a2a40;
-  --fg:#fff;
-  --muted:#ccc;
-  --accent:#B39ACD;
-  --line:#444;
-  --danger:#FF6F61;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body {
-  background-color: var(--bg);
-  color: var(--fg);
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 20px;
-  max-width: 1920px;
-  height: 100vh;
-  overflow-y: auto;
-}
+    /* ===== Modern Design System ===== */
+    :root {
+      /* Primary Colors */
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      
+      /* Secondary Colors */
+      --secondary: #ec4899;
+      --secondary-dark: #db2777;
+      --secondary-light: #f472b6;
+      
+      /* Neutral Colors */
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      
+      /* Status Colors */
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+      
+      /* Spacing */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+      
+      /* Borders & Shadows */
+      --border-radius: 0.75rem;
+      --border-color: #334155;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
 
-/* Headings */
-h1, h2 {
-  color: var(--accent);
-  margin: 0 0 10px;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-/* ======= Layout ======= */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-auto-rows: minmax(0, 1fr);
-  gap: 20px;
-  height: calc(100vh - 120px);
-}
+    body {
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f3a 100%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
 
-/* ======= Card ======= */
-.card {
-  background: var(--card);
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  min-height: 0;
-  overflow: hidden;
-}
-.card h2 {
-  font-size: 16px;
-  line-height: 1;
-  margin-bottom: 8px;
-  flex: 0 0 auto;
-}
+    /* ===== Header ===== */
+    .header {
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-lg) var(--space-2xl);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-md);
+    }
 
-/* Scrollable area inside each card */
-.card-body{
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-  border-radius: 8px;
-}
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
 
-/* ======= Table ======= */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.table th, .table td {
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
-  vertical-align: top;
-}
-.table th { background-color: #333; position: sticky; top: 0; z-index: 1; }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
 
-/* ======= Charts ======= */
-.chart-wrap{
-  height: 200px;      /* was 320px → smaller pie */
-  min-height: 160px;
-  margin-bottom: 10px;
-}
+    .logo i {
+      color: var(--primary);
+      font-size: 1.8rem;
+    }
 
-/* ======= Misc ======= */
-.error { color: var(--danger); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-a { color: var(--accent); text-decoration: none; font-size: 13px; word-break: break-all; }
-.small { color: var(--muted); font-size: 12px; }
+    .header-actions {
+      display: flex;
+      gap: var(--space-md);
+      align-items: center;
+    }
+
+    /* ===== Main Layout ===== */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--space-2xl);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: var(--space-xl);
+      margin-bottom: var(--space-2xl);
+    }
+
+    .dashboard-grid.full-width {
+      grid-template-columns: 1fr;
+    }
+
+    /* ===== Cards ===== */
+    .card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-lg);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary-light);
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .card-title i {
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .card-body {
+      min-height: 200px;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      padding: var(--space-sm) var(--space-lg);
+      border: none;
+      border-radius: var(--border-radius);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Link styling */
+    a {
+      color: white;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    a:hover {
+      color: #e2e8f0;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+      border-color: var(--primary-light);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--error), #dc2626);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #dc2626, var(--error));
+      transform: translateY(-1px);
+    }
+
+    /* ===== Tables ===== */
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .table th,
+    .table td {
+      padding: var(--space-sm) var(--space-md);
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table th {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .table tbody tr {
+      transition: background-color 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .table a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .table a:hover {
+      color: #e2e8f0;
+      text-decoration: underline;
+    }
+
+    /* ===== Charts ===== */
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin: var(--space-md) 0;
+    }
+
+    .chart-container.small {
+      height: 200px;
+    }
+
+    /* ===== Status Badges ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .badge-error {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--error);
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+    }
+
+    /* ===== Error Text ===== */
+    .error-text {
+      color: var(--error);
+      font-family: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+      font-size: 0.8rem;
+      background: rgba(239, 68, 68, 0.1);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      border-left: 3px solid var(--error);
+    }
+
+    /* ===== Stats Cards ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-lg);
+      margin-bottom: var(--space-2xl);
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: var(--space-lg);
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== Timestamps ===== */
+    .timestamp {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ===== Loading States ===== */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-2xl);
+      color: var(--text-muted);
+    }
+
+    .loading i {
+      animation: spin 1s linear infinite;
+      margin-right: var(--space-sm);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ===== Responsive Design ===== */
+    @media (max-width: 768px) {
+      .container {
+        padding: var(--space-lg);
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+      }
+
+      .header-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .table th,
+      .table td {
+        padding: var(--space-xs) var(--space-sm);
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: var(--space-md);
+      }
+
+      .card-title {
+        font-size: 1rem;
+      }
+    }
+
+    /* ===== Animations ===== */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Utility Classes ===== */
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .text-right { text-align: right; }
+    .mb-0 { margin-bottom: 0; }
+    .mb-1 { margin-bottom: var(--space-xs); }
+    .mb-2 { margin-bottom: var(--space-sm); }
+    .mb-4 { margin-bottom: var(--space-md); }
+    .mt-2 { margin-top: var(--space-sm); }
+    .mt-4 { margin-top: var(--space-md); }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <h1>CoolDL Dashboard</h1>
-  <button onclick="restartBot()">🔁 Restart CoolDL Bot</button>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <a href="/" class="logo">
+        <i class="fas fa-download"></i>
+        <span>CoolDL Dashboard</span>
+      </a>
+      
+      <div class="header-actions">
+        <button onclick="refreshData()" class="btn btn-secondary" title="Refresh Data">
+          <i class="fas fa-sync-alt"></i>
+          Refresh
+        </button>
+        <button onclick="restartBot()" class="btn btn-danger" title="Restart Bot">
+          <i class="fas fa-power-off"></i>
+          Restart Bot
+        </button>
+      </div>
+    </div>
+  </header>
 
-  <div class="grid">
-    <!-- Top Left: Sources -->
-    <div class="card">
-      <div style="width:100%;display:flex;flex-direction:column;min-height:0;flex:1">
-        <h2>Top Sources</h2>
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Stats Cards -->
+    <div class="stats-grid fade-in">
+      <div class="stat-card">
+        <div class="stat-value" id="totalDownloads">{{ total_downloads }}</div>
+        <div class="stat-label">Total Downloads</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalSources">{{ total_sources }}</div>
+        <div class="stat-label">Active Sources</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalErrors">{{ total_errors }}</div>
+        <div class="stat-label">Errors</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="successRate">
+          {{ "%.1f"|format(success_rate) }}%
+        </div>
+        <div class="stat-label">Success Rate</div>
+      </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- Top Sources Chart -->
+      <div class="card fade-in">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-chart-pie"></i>
+            Top Sources
+          </h3>
+        </div>
         <div class="card-body">
-          <div class="chart-wrap">
-            <canvas id="sourceChart" style="width:100%; height:100%;"></canvas>
+          <div class="chart-container" id="sourceChartContainer">
+            <canvas id="sourceChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="card fade-in">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-info-circle"></i>
+            System Status
+          </h3>
+        </div>
+        <div class="card-body">
+          <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Bot Status:</span>
+              <span class="badge badge-success">
+                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                Running
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Database:</span>
+              <span class="badge badge-success">
+                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
+                Connected
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Last Update:</span>
+              <span class="timestamp" id="lastUpdate">{{ now }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Active Sessions:</span>
+              <span id="activeSessions">1</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Top Right: (Removed Activity card) -->
-
-    <!-- Bottom Left: Recent Downloads -->
-    <div class="card">
-      <div style="width:100%;display:flex;flex-direction:column;min-height:0;flex:1">
-        <h2>Recent Downloads</h2>
+    <!-- Recent Downloads Table -->
+    <div class="dashboard-grid full-width">
+      <div class="card fade-in">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-download"></i>
+            Recent Downloads
+          </h3>
+        </div>
         <div class="card-body">
-          <table class="table" id="recentTable">
-            <tr>
-              <th>File</th>
-              <th>By</th>
-              <th>Source</th>
-              <th>Link</th>
-              <th>Timestamp</th>
-            </tr>
-            {% for d in downloads %}
-            <tr>
-              <td>{{ d['filename'] if d.get('filename') else '-' }}</td>
-              <td>{{ d.get('name','web') }}</td>
-              <td>{{ d['source'] }}</td>
-              <td><a href="{{ d['url'] }}" target="_blank">Open</a></td>
-              <td class="ts" data-ts="{{ d['timestamp']|e }}">{{ d['timestamp'] }}</td>
-            </tr>
-            {% endfor %}
-          </table>
+          <div class="table-container">
+            <table class="table" id="recentDownloadsTable">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-file"></i> File</th>
+                  <th><i class="fas fa-user"></i> User</th>
+                  <th><i class="fas fa-server"></i> Source</th>
+                  <th><i class="fas fa-link"></i> Link</th>
+                  <th><i class="fas fa-clock"></i> Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for d in downloads %}
+                <tr>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                      <i class="fas fa-file-alt" style="color: var(--primary);"></i>
+                      {{ d['filename'] if d.get('filename') else '-' }}
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge badge-success">{{ d.get('name','web') }}</span>
+                  </td>
+                  <td>{{ d['source'] }}</td>
+                  <td>
+                    <a href="{{ d['url'] }}" target="_blank" class="btn btn-primary btn-sm">
+                      <i class="fas fa-external-link-alt"></i>
+                      Open
+                    </a>
+                  </td>
+                  <td class="timestamp" data-ts="{{ d['timestamp']|e }}">{{ d['timestamp'] }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Bottom Right: Errors -->
-    <div class="card">
-      <div style="width:100%;display:flex;flex-direction:column;min-height:0;flex:1">
-        <h2>Error Logs</h2>
+    <!-- Error Logs Table -->
+    <div class="dashboard-grid full-width">
+      <div class="card fade-in">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-exclamation-triangle"></i>
+            Error Logs
+          </h3>
+        </div>
         <div class="card-body">
-          <table class="table" id="errorsTable">
-            <tr>
-              <th>Error</th>
-              <th>Timestamp</th>
-            </tr>
-            {% for e in errors %}
-            <tr class="error">
-              <td>{{ e['error'] if 'error' in e.keys() else 'Unknown error' }}</td>
-              <td class="ts" data-ts="{{ e['timestamp']|e }}">{{ e['timestamp'] }}</td>
-            </tr>
-            {% endfor %}
-          </table>
+          <div class="table-container">
+            <table class="table" id="errorLogsTable">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-bug"></i> Error</th>
+                  <th><i class="fas fa-clock"></i> Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in errors %}
+                <tr>
+                  <td>
+                    <div class="error-text">
+                      {{ e['error'] if 'error' in e.keys() else 'Unknown error' }}
+                    </div>
+                  </td>
+                  <td class="timestamp" data-ts="{{ e['timestamp']|e }}">{{ e['timestamp'] }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
+    // Restart Bot Function
     function restartBot() {
-      if (!confirm("Are you sure you want to restart the CoolDL bot?")) return;
-      fetch("/restart-bot", { method: "POST" })
-        .then(res => res.json())
-        .then(data => alert(data.message || "Restart triggered"))
-        .catch(() => alert("Failed to restart bot"));
+      if (!confirm("Are you sure you want to restart the CoolDL bot?\n\nThis will interrupt all active downloads.")) {
+        return;
+      }
+      
+      // Show loading state
+      const btn = event.target.closest('button');
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restarting...';
+      btn.disabled = true;
+      
+      fetch("/restart-bot", { 
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || "✅ CoolDL bot has been restarted successfully.");
+        setTimeout(() => {
+          refreshData();
+        }, 2000);
+      })
+      .catch(() => {
+        alert("❌ Failed to restart bot. Please check the logs and try again.");
+      })
+      .finally(() => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+      });
     }
 
-    // Pie chart (smaller radius)
+    // Refresh Data Function
+    function refreshData() {
+      const btn = document.querySelector('[onclick="refreshData()"]');
+      const originalHTML = btn.innerHTML;
+      
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      btn.disabled = true;
+      
+      // Reload the page to get fresh data
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    }
+
+    // Enhanced Pie Chart
     const sourceCtx = document.getElementById('sourceChart')?.getContext('2d');
     if (sourceCtx) {
+      const sourceLabels = [{% for row in top_sources %}"{{ row['source'] }}",{% endfor %}];
+      const sourceData = [{% for row in top_sources %}{{ row['count'] }},{% endfor %}];
+      
       new Chart(sourceCtx, {
-        type: 'pie',
+        type: 'doughnut',
         data: {
-          labels: [{% for row in top_sources %}"{{ row['source'] }}",{% endfor %}],
+          labels: sourceLabels,
           datasets: [{
-            data: [{% for row in top_sources %}{{ row['count'] }},{% endfor %}],
-            backgroundColor: ['#B39ACD', '#FF6F61', '#F7C1D9', '#EDEDED', '#7D5FFF']
+            data: sourceData,
+            backgroundColor: [
+              '#6366f1', // Primary
+              '#ec4899', // Secondary
+              '#10b981', // Success
+              '#f59e0b', // Warning
+              '#ef4444', // Error
+              '#8b5cf6', // Purple
+              '#06b6d4', // Cyan
+              '#84cc16'  // Lime
+            ],
+            borderColor: '#1e293b',
+            borderWidth: 2,
+            hoverOffset: 4
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          radius: '70%',                 // smaller circle
-          layout: { padding: 0 },
           plugins: {
             legend: {
-              position: 'right',
-              labels: { color: '#ccc', boxWidth: 10, font: { size: 11 } }
+              position: 'bottom',
+              labels: {
+                color: '#cbd5e1',
+                boxWidth: 12,
+                padding: 15,
+                font: {
+                  size: 11,
+                  weight: '500'
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              titleColor: '#f1f5f9',
+              bodyColor: '#cbd5e1',
+              borderColor: '#334155',
+              borderWidth: 1,
+              cornerRadius: 8,
+              displayColors: true,
+              callbacks: {
+                label: function(context) {
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((context.parsed * 100) / total).toFixed(1);
+                  return `${context.label}: ${context.parsed} (${percentage}%)`;
+                }
+              }
             }
+          },
+          animation: {
+            animateRotate: true,
+            duration: 1000
           }
         }
       });
     }
 
-    // Human-readable timestamps: "YYYY/MM/DD, h:mm AM/PM"
-    (function humanizeTimestamps(){
+    // Enhanced Timestamp Formatting
+    function formatTimestamps() {
       const fmt = new Intl.DateTimeFormat('en-US', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: 'numeric', minute: '2-digit', hour12: true
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
       });
-      document.querySelectorAll('td.ts').forEach(td => {
+
+      document.querySelectorAll('td.timestamp').forEach(td => {
         const raw = td.getAttribute('data-ts') || td.textContent;
         let d = new Date(raw);
-        // fallback: try parse without timezone if failed
+        
         if (isNaN(d.getTime())) {
-          // try appending 'Z' for ISO naive
           d = new Date(raw + 'Z');
         }
+        
         if (!isNaN(d.getTime())) {
-          const parts = fmt.formatToParts(d);
-          // build YYYY/MM/DD, h:mm AM/PM
-          const y = parts.find(p=>p.type==='year')?.value ?? '';
-          const m = parts.find(p=>p.type==='month')?.value ?? '';
-          const day = parts.find(p=>p.type==='day')?.value ?? '';
-          const hour = parts.find(p=>p.type==='hour')?.value ?? '';
-          const minute = parts.find(p=>p.type==='minute')?.value ?? '';
-          const dayPeriod = parts.find(p=>p.type==='dayPeriod')?.value?.toUpperCase() ?? '';
-          td.textContent = `${y}/${m}/${day}, ${hour}:${minute} ${dayPeriod}`;
+          const formatted = fmt.format(d);
+          td.textContent = formatted;
+          
+          // Add relative time
+          const now = new Date();
+          const diffMs = now - d;
+          const diffMins = Math.floor(diffMs / 60000);
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
+          
+          let relative = '';
+          if (diffMins < 1) {
+            relative = 'just now';
+          } else if (diffMins < 60) {
+            relative = `${diffMins}m ago`;
+          } else if (diffHours < 24) {
+            relative = `${diffHours}h ago`;
+          } else {
+            relative = `${diffDays}d ago`;
+          }
+          
+          td.title = relative;
         }
       });
-    })();
+    }
+
+    // Initialize formatting when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      formatTimestamps();
+      
+      // Add smooth fade-in animation to cards
+      const cards = document.querySelectorAll('.card');
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.classList.add('fade-in');
+        }, index * 100);
+      });
+      
+      // Update last update time
+      const lastUpdateEl = document.getElementById('lastUpdate');
+      if (lastUpdateEl) {
+        const now = new Date();
+        const fmt = new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+        lastUpdateEl.textContent = fmt.format(now);
+      }
+    });
+
+    // Auto-refresh every 30 seconds (optional)
+    // setInterval(refreshData, 30000);
   </script>
 </body>
 </html>
