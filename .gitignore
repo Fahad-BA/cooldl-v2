@@ -180,3 +180,19 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+
+# CoolDL specific ignores
+# Unused files directory
+unused/
+*.log
+*.tmp
+*.bak
+*.backup
+*_backup.py
+*_old.py
+*_temp.py
+test_*.py
+*_test.pyunused/
+
+# Unused files folder
+unused/

@@ -1,4 +1,4 @@
-import os, re, random, string, logging, datetime, pytz, sqlite3, asyncio
+import os, re, random, string, logging, datetime, pytz, sqlite3, asyncio, time, uuid
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 from collections import defaultdict
@@ -7,10 +7,65 @@ from typing import Optional
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 from telegram.request import HTTPXRequest
-from telegram.error import TimedOut
+from telegram.error import TimedOut, Conflict
 
 from yt_dlp import YoutubeDL, DownloadError
 from dotenv import load_dotenv
+
+# Import blocking system
+from blocks import is_user_blocked, BLOCK_MESSAGE, log_blocked_attempt
+from admin_commands import get_admin_handlers
+
+
+def get_ydl_opts(base_opts, is_shorts=False, is_tiktok=False):
+    """Get optimized yt-dlp options for different platforms."""
+    
+    opts = base_opts.copy()
+    
+    if is_shorts:
+        # 🎯 OPTIMIZED FOR YOUTUBE SHORTS - Telegram compatible
+        opts.update({
+            # Prefer mp4 format with max 720p for better Telegram compatibility
+            'format': 'best[height<=720][ext=mp4]/bestvideo[height<=720]+bestaudio[acodec=opus]/bestvideo[height<=720]+bestaudio/best',
+            # Force mp4 container for Telegram compatibility
+            'recode-video': 'mp4' if opts.get('recode-video') else None,
+            # Ensure audio is in compatible format
+            'postprocessors': [
+                {
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mp4',
+                    'when': 'post_process'
+                },
+                # Add audio codec conversion if needed
+                {
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                    'when': 'post_process'
+                }
+            ],
+            # Shorts-specific optimizations
+            'writethumbnail': False,
+            'writeinfojson': False,
+            'writesubtitles': False,
+            'writeautomaticsub': False,
+            'embedthumbnail': False,
+            'addmetadata': False,
+            'no_warnings': True,
+            'ignoreerrors': False,
+            'extract_flat': 'discard_in_playlist',
+            'fragment_retries': 15,
+            'hls_prefer_native': True,
+            'compat_opts': ['embed-thumbnail-ffmpeg'],
+            # Additional headers for shorts
+            'http_headers': {
+                **opts.get('http_headers', {}),
+                'Referer': 'https://www.youtube.com/shorts/',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+        })
+    
+    return opts
 
 # ================== ENV / SETUP ==================
 load_dotenv()
@@ -144,7 +199,7 @@ def record_download(chat_id: int):
     user_download_tracker[chat_id].append(datetime.datetime.now())
 
 # NEW: Cleanup old files
-def cleanup_old_files():
+# cleanup_old_files() # Disabled - keeping files longer
     """Remove files older than FILE_RETENTION_DAYS."""
     try:
         cutoff = datetime.datetime.now() - datetime.timedelta(days=FILE_RETENTION_DAYS)
@@ -281,13 +336,17 @@ def human_size(sz: int) -> str:
     
     return f"{size:.2f}TB"
 
-def build_meta_text(file_id, name, username, source, url, path: Path):
+def build_meta_text(user_id, name, username, source, url, path: Path):
     try:
         sz = human_size(path.stat().st_size)
     except:
         sz = "n/a"
-    return (f"✅ Downloaded\nID: {file_id}\nUser: {name} ({username})\nSource: {source}\n"
-            f"File: {path.name} ({sz})\nTime: {now_local()}\nURL: {url}")
+    return (f"ID: {user_id}\n"
+            f"User: {name} ({username})\n"
+            f"Source: {source}\n"
+            f"File: {path.name} ({sz})\n"
+            f"Time: {now_local()}\n"
+            f"URL: {url}")
 
 async def send_with_retry(factory, retries=3, backoff_base=2):
     for i in range(retries):
@@ -299,6 +358,7 @@ async def send_with_retry(factory, retries=3, backoff_base=2):
 
 async def deliver_file(final_path: Path, source: str, chat_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
     sent_to_user = None
+    sent_to_log = None
     file_extension = final_path.suffix.lower()
     file_size = final_path.stat().st_size
 
@@ -307,30 +367,52 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
         logger.error(f"File too large: {human_size(file_size)} > {human_size(MAX_FILE_SIZE)}")
         return False
 
-    async def _send_video(to_chat):
+    # Create inline keyboard button
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    keyboard = [[InlineKeyboardButton("Downloaded with @CoolDLBot", url="https://t.me/CoolDLBot")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    async def _send_video(to_chat, include_caption=True):
+        caption = CAPTION if include_caption and CAPTION else ""
         return await send_with_retry(lambda: context.bot.send_video(
             chat_id=to_chat, video=final_path.open("rb"),
-            **video_args(final_path.stem)
+            caption=caption,
+            reply_markup=reply_markup,
+            supports_streaming=True
         ))
 
-    async def _send_document(to_chat):
+    async def _send_document(to_chat, include_caption=True):
+        caption = CAPTION if include_caption and CAPTION else ""
         return await send_with_retry(lambda: context.bot.send_document(
             chat_id=to_chat, document=final_path.open("rb"),
-            **doc_args(final_path.stem)
+            caption=caption,
+            reply_markup=reply_markup
         ))
     
+    # Send to user (without filename caption)
     if file_extension in ['.mp4', '.mov', '.webm']:
         try:
-            sent_to_user = await _send_video(chat_id)
+            sent_to_user = await _send_video(chat_id, include_caption=False)
         except Exception:
-            sent_to_user = await _send_document(chat_id)
+            sent_to_user = await _send_document(chat_id, include_caption=False)
     else:
         try:
-            sent_to_user = await _send_video(chat_id)
+            sent_to_user = await _send_video(chat_id, include_caption=False)
         except Exception:
-            sent_to_user = await _send_document(chat_id)
-            
-    if CHANNEL_ID and sent_to_user:
+            sent_to_user = await _send_document(chat_id, include_caption=False)
+    
+    # Send to LOG_CHANNEL_ID (with metadata caption if CAPTION is set)
+    if LOG_CHANNEL_ID:
+        try:
+            if file_extension in ['.mp4', '.mov', '.webm']:
+                sent_to_log = await _send_video(LOG_CHANNEL_ID, include_caption=True)
+            else:
+                sent_to_log = await _send_document(LOG_CHANNEL_ID, include_caption=True)
+        except Exception as e:
+            logging.warning(f"send to log channel failed: {e}")
+    
+    # Also copy to regular CHANNEL_ID if set (for backward compatibility)
+    if CHANNEL_ID and CHANNEL_ID != LOG_CHANNEL_ID and sent_to_user:
         try:
             await context.bot.copy_message(
                 chat_id=CHANNEL_ID,
@@ -344,15 +426,16 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
 
 # ================== HANDLERS ==================
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📥 Send me a video link to download. Supported: YouTube, TikTok, Instagram, X")
+    await update.message.reply_text("📥 Send me a video link to download. Supported: TikTok, Instagram, X")
 
 async def help_command(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = f"""
 📋 Supported platforms:
-• YouTube
-• TikTok
+• TikTok  
 • Instagram
 • X (Twitter)
+• Snapchat
+• Tumblr
 
 ⚙️ Limits:
 • Max {MAX_DOWNLOADS_PER_HOUR} downloads/hour
@@ -382,21 +465,22 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     file_id = rand_id()
     source = get_source(norm_url)
     is_tiktok = (source == "TikTok")
+    is_shorts = (source == "YouTube" and is_youtube_shorts(norm_url))
 
     log_to_db("users", (chat_id, name, username, now_utc_iso()))
 
     # === Cache ===
     cached = find_cached_file(cache_key)
     if cached:
-        if CHANNEL_ID:
+        if LOG_CHANNEL_ID:
             try:
                 await context.bot.send_message(
-                    chat_id=CHANNEL_ID,
-                    text=build_meta_text(file_id, name, username, source, norm_url, cached),
+                    chat_id=LOG_CHANNEL_ID,
+                    text=build_meta_text(user.id, name, username, source, norm_url, cached),
                     disable_web_page_preview=True
                 )
             except Exception as e:
-                logging.warning(f"send meta to channel failed (cache): {e}")
+                logging.warning(f"send meta to log channel failed (cache): {e}")
 
         ok = await deliver_file(cached, source, chat_id, context)
         if not ok:
@@ -416,7 +500,8 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
         filename = f"File{rand_id()}"
         outtmpl = str(DOWNLOAD_DIR / f"{filename}.%(ext)s")
 
-        ydl_opts = {
+        # Set up ydl_opts with platform-specific handling
+        base_opts = {
             'outtmpl': outtmpl,
             'format': 'bv*+ba/b',
             'recode-video': 'mp4',
@@ -432,6 +517,9 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
             'socket_timeout': 30,
             'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         }
+        
+        # Apply platform-specific optimizations
+        ydl_opts = get_ydl_opts(base_opts, is_shorts=is_shorts, is_tiktok=is_tiktok)
         
         # Add TikTok impersonation for age-restricted content
         if is_tiktok:
@@ -490,15 +578,15 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
         except Exception as e:
             logging.warning(f"delete progress msg failed: {e}")
 
-        if CHANNEL_ID:
+        if LOG_CHANNEL_ID:
             try:
                 await context.bot.send_message(
-                    chat_id=CHANNEL_ID,
-                    text=build_meta_text(file_id, name, username, source, norm_url, final_path),
+                    chat_id=LOG_CHANNEL_ID,
+                    text=build_meta_text(user.id, name, username, source, norm_url, final_path),
                     disable_web_page_preview=True
                 )
             except Exception as e:
-                logging.warning(f"send meta to channel failed: {e}")
+                logging.warning(f"send meta to log channel failed: {e}")
 
         ok = await deliver_file(final_path, source, chat_id, context)
         if not ok:
@@ -516,6 +604,22 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
             logging.warning(f"recording download failed: {e}")
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check if user is blocked first
+    if update.message and update.message.from_user:
+        chat_id = update.message.from_user.id
+        
+        if is_user_blocked(chat_id):
+            # User is blocked, send block message and log the attempt
+            username = update.message.from_user.username or "Unknown"
+            url = update.message.text if hasattr(update.message, 'text') else "Unknown"
+            
+            # Log the blocked attempt
+            log_blocked_attempt(chat_id, url, username)
+            
+            # Send block message
+            await update.message.reply_text(BLOCK_MESSAGE)
+            return
+    
     urls = extract_urls(update.message.text)
     if not urls:
         await update.message.reply_text("❌ No valid URLs found.")
@@ -533,7 +637,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ================== BOOTSTRAP ==================
 if __name__ == '__main__':
     ensure_tables()
-    cleanup_old_files()
+    # cleanup_old_files() # Disabled - keeping files longer
     
     if not BOT_TOKEN:
         raise SystemExit("❌ BOT_TOKEN env var required")
@@ -541,8 +645,37 @@ if __name__ == '__main__':
     logger.info(f"Config: MAX_CONCURRENT={MAX_CONCURRENT}, TIMEOUT={DOWNLOAD_TIMEOUT}s, MAX_FILE_SIZE={human_size(MAX_FILE_SIZE)}")
     
     req = HTTPXRequest(connect_timeout=20, read_timeout=180)
+    
+    # Use unique bot instance to avoid conflicts
     app = ApplicationBuilder().token(BOT_TOKEN).request(req).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
+    
+    # Add admin commands
+    admin_handlers = get_admin_handlers()
+    for command, handler in admin_handlers:
+        app.add_handler(CommandHandler(command, handler))
+    
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
-    app.run_polling()
+    # Enhanced polling with conflict handling
+    import time
+    from telegram.error import Conflict
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Starting polling (attempt {attempt + 1}/{max_retries})...")
+            app.run_polling(drop_pending_updates=True)
+            break
+        except Conflict as e:
+            logger.warning(f"Conflict detected: {e}")
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 30  # 30s, 60s, 90s
+                logger.info(f"Waiting {wait_time}s before retry...")
+                time.sleep(wait_time)
+            else:
+                logger.error("Max retries reached. Bot cannot start due to conflict.")
+                raise
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            raise
