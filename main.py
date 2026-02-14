@@ -9,12 +9,18 @@ import os
 import httpx
 from pathlib import Path
 
+# Import blocks routers
+from web_blocks_simple import router as blocks_router
+
 # تأكد أن المجلدات موجودة
 for d in ("downloads", "static", "templates"):
     Path(d).mkdir(parents=True, exist_ok=True)
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "SECRET_REMOVED"))
+
+# Include blocks routers
+app.include_router(blocks_router)
 
 templates = Jinja2Templates(directory="templates")
 # لا تفحص وجود المجلدات عند التشغيل
@@ -91,6 +97,24 @@ async def dashboard(request: Request):
         cur.execute("SELECT COUNT(*) FROM (SELECT source FROM downloads GROUP BY source)")
         total_sources_db = cur.fetchone()[0]
         
+        # Get blocked users count
+        cur.execute("SELECT COUNT(*) FROM blocked_users")
+        blocked_users_count = cur.fetchone()[0]
+        
+        # Get users count
+        cur.execute("SELECT COUNT(*) FROM users")
+        users_count = cur.fetchone()[0]
+        
+        # Get users data for the users table
+        cur.execute("""
+            SELECT u.chat_id, u.name, u.username, COUNT(d.chat_id) as downloads_count
+            FROM users u 
+            LEFT JOIN downloads d ON u.chat_id = d.chat_id 
+            GROUP BY u.chat_id, u.name, u.username
+            ORDER BY downloads_count DESC
+        """)
+        users_data = cur.fetchall()
+        
         total_operations = total_downloads_db + total_errors_db
         if total_operations > 0:
             success_rate = (total_downloads_db / total_operations) * 100
@@ -120,7 +144,10 @@ async def dashboard(request: Request):
         "total_downloads": total_downloads_db,
         "total_errors": total_errors_db,
         "total_sources": total_sources_db,
-        "success_rate": success_rate
+        "success_rate": success_rate,
+        "blocked_users_count": blocked_users_count,
+        "users_count": users_count,
+        "users_data": users_data
     })
 
 @app.post("/restart-bot")

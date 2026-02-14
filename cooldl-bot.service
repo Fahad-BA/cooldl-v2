@@ -1,0 +1,17 @@
+[Unit]
+Description=CoolDL Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=fahad
+WorkingDirectory=/home/fahad/cooldl
+Environment=PATH=/home/fahad/cooldl/venv/bin
+ExecStart=/home/fahad/cooldl/venv/bin/python3 main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -518,6 +518,10 @@
         </div>
         <div class="stat-label">Success Rate</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-value" id="usersCount">{{ users_count }}</div>
+        <div class="stat-label">Users Count</div>
+      </div>
     </div>
 
     <!-- Dashboard Grid -->
@@ -566,8 +570,41 @@
               <span class="timestamp" id="lastUpdate">{{ now }}</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Blocked Users:</span>
+              <a href="/blocks" id="blockedUsersCount" style="color: #6366f1; text-decoration: none; font-weight: 600; cursor: pointer;" title="Click to view blocked users">{{ blocked_users_count }}</a>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
               <span>Active Sessions:</span>
               <span id="activeSessions">1</span>
+            </div>
+            
+            <!-- Block User Input -->
+            <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border-color);">
+              <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
+                <label for="blockUserInput" style="font-size: 0.875rem; color: var(--text-secondary); font-weight: 500;">
+                  <i class="fas fa-user-shield" style="margin-right: var(--space-xs);"></i>
+                  Block User (chat_id/username/filename):
+                </label>
+                <div style="display: flex; gap: var(--space-sm);">
+                  <input 
+                    type="text" 
+                    id="blockUserInput" 
+                    placeholder="Enter chat_id, username, or filename" 
+                    style="flex: 1; padding: var(--space-sm); background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-primary); font-size: 0.875rem;"
+                    onkeypress="handleBlockInputKeypress(event)"
+                  >
+                  <button 
+                    onclick="blockUser()" 
+                    class="btn btn-primary" 
+                    style="padding: var(--space-sm) var(--space-lg); font-size: 0.875rem;"
+                    title="Block user"
+                  >
+                    <i class="fas fa-ban"></i>
+                    Block
+                  </button>
+                </div>
+                <div id="blockMessage" style="font-size: 0.75rem; margin-top: var(--space-xs); min-height: 1rem;"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -624,6 +661,70 @@
       </div>
     </div>
 
+        <!-- Users Table -->
+    <div class="dashboard-grid full-width">
+      <div class="card fade-in">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fas fa-users"></i>
+            Users Table
+          </h3>
+        </div>
+        <div class="card-body">
+          <!-- Search Filter -->
+          <div style="margin-bottom: var(--space-lg); padding: var(--space-md); background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border-color); border-radius: var(--border-radius);">
+            <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm);">
+              <i class="fas fa-search" style="color: var(--primary);"></i>
+              <label for="userSearchInput" style="font-weight: 500; color: var(--text-primary);">Search Users:</label>
+            </div>
+            <input type="text" id="userSearchInput" placeholder="Search by display name or username..." 
+                   style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-color); 
+                          border-radius: var(--border-radius); color: var(--text-primary); font-size: 0.875rem;"
+                   onkeyup="filterUsers()">
+          </div>
+          <div class="table-container">
+            <table class="table" id="usersTable">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-hashtag"></i> Chat ID</th>
+                  <th><i class="fas fa-user"></i> Display Name</th>
+                  <th><i class="fas fa-at"></i> Username</th>
+                  <th><i class="fas fa-download"></i> Downloads Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in users_data %}
+                <tr>
+                  <td>
+                    <span class="badge badge-primary">{{ user[0] }}</span>
+                  </td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                      <i class="fas fa-user-circle" style="color: var(--primary);"></i>
+                      {{ user[1] if user[1] else 'Unknown' }}
+                    </div>
+                  </td>
+                  <td>
+                    {% if user[2] %}
+                    <a href="https://t.me/{{ user[2] }}" target="_blank" style="color: #6366f1; text-decoration: none;">
+                      <i class="fab fa-telegram"></i> {{ user[2] }}
+                    </a>
+                    {% else %}
+                    <span class="text-muted">No username</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge badge-success">{{ user[3] if user[3] else 0 }}</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Error Logs Table -->
     <div class="dashboard-grid full-width">
       <div class="card fade-in">
@@ -666,6 +767,41 @@
   </div>
 
   <script>
+
+    // Filter Users Function
+    function filterUsers() {
+        const input = document.getElementById('userSearchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('usersTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < rows.length; i++) {  // Start from 1 to skip header
+            const row = rows[i];
+            const cells = row.getElementsByTagName('td');
+            
+            let displayName = '';
+            let username = '';
+            
+            // Get display name from second column
+            if (cells[1]) {
+                displayName = cells[1].textContent || cells[1].innerText;
+            }
+            
+            // Get username from third column
+            if (cells[2]) {
+                username = cells[2].textContent || cells[2].innerText;
+            }
+            
+            // Check if either field contains the filter text
+            if (displayName.toLowerCase().includes(filter) || username.toLowerCase().includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+    
+    
     // Restart Bot Function
     function restartBot() {
       if (!confirm("Are you sure you want to restart the CoolDL bot?\n\nThis will interrupt all active downloads.")) {
@@ -854,8 +990,101 @@
         });
         lastUpdateEl.textContent = fmt.format(now);
       }
+      
+      // Initialize blocked users count
+      refreshBlockedUsersCount();
     });
 
+    // Block User Function
+    function blockUser() {
+      const input = document.getElementById('blockUserInput');
+      const message = document.getElementById('blockMessage');
+      const value = input.value.trim();
+      
+      if (!value) {
+        showBlockMessage('Please enter a chat_id, username, or filename', 'error');
+        return;
+      }
+      
+      // Disable input and button during request
+      input.disabled = true;
+      const blockBtn = input.nextElementSibling;
+      const originalBtnHTML = blockBtn.innerHTML;
+      blockBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      blockBtn.disabled = true;
+      
+      // Determine if input is chat_id (number), username, or filename
+      const isChatId = /^\d+$/.test(value);
+      
+      fetch("/blocks/api/block", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: isChatId ? parseInt(value) : null,
+          username: isChatId ? null : value,
+          filename: null,
+          reason: 'Blocked from dashboard',
+          blocked_by: 'dashboard_admin'
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showBlockMessage(`✅ User blocked successfully: ${value}`, 'success');
+          input.value = '';
+          // Refresh blocked users count
+          refreshBlockedUsersCount();
+        } else {
+          showBlockMessage(`❌ ${data.message}`, 'error');
+        }
+      })
+      .catch(error => {
+        showBlockMessage(`❌ Error blocking user: ${error.message}`, 'error');
+      })
+      .finally(() => {
+        input.disabled = false;
+        blockBtn.innerHTML = originalBtnHTML;
+        blockBtn.disabled = false;
+      });
+    }
+    
+    function handleBlockInputKeypress(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        blockUser();
+      }
+    }
+    
+    function showBlockMessage(message, type) {
+      const messageEl = document.getElementById('blockMessage');
+      messageEl.textContent = message;
+      messageEl.style.color = type === 'success' ? 'var(--success)' : 'var(--error)';
+      
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        messageEl.textContent = '';
+      }, 5000);
+    }
+    
+    function refreshBlockedUsersCount() {
+      fetch("/blocks/api/blocked")
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const count = data.blocked_users ? data.blocked_users.length : 0;
+            const countEl = document.getElementById('blockedUsersCount');
+            if (countEl) {
+              countEl.textContent = count;
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error refreshing blocked users count:', error);
+        });
+    }
+    
     // Auto-refresh disabled - remove seconds from timestamps and add error reference numbers
     // setInterval(refreshData, 30000);
   </script>
