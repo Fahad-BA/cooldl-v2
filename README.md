@@ -1,15 +1,31 @@
-# 🚀 cooldl-v2 - Ultimate Video Downloader Bot
+# 🚀 CoolDL Bot - Ultimate Video Downloader Bot
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.0-blue?style=for-the-badge&logo=github&logoColor=white" alt="Version">
   <img src="https://img.shields.io/badge/python-3.11%2B-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge&logo=github&logoColor=white" alt="License">
   <img src="https://img.shields.io/badge/platform-linux-lightgrey?style=for-the-badge&logo=linux&logoColor=white" alt="Platform">
+  <img src="https://img.shields.io/badge/vibe_coded-purple?style=for-the-badge&logo=sparkles&logoColor=white" alt="Vibe Coded">
 </p>
 
 <p align="center">
-  <em>A powerful, feature-rich Telegram bot for downloading videos from multiple platforms with real-time dashboard monitoring</em>
+  <em>A powerful, self-hosted Telegram bot for downloading videos from multiple platforms with real-time dashboard monitoring - Now vibe-coded!</em>
 </p>
+
+<p align="center">
+  <a href="https://t.me/CoolDLBot"><strong>🤖 Try the Bot</strong></a> •
+  <a href="#-installation"><strong>📖 Installation</strong></a> •
+  <a href="#-features"><strong>✨ Features</strong></a> •
+  <a href="#-use-cases"><strong>🎯 Use Cases</strong></a>
+</p>
+
+---
+
+## 🎯 **About This Project**
+
+**CoolDL Bot** is a sophisticated, self-hosted video downloader bot that seamlessly integrates with Telegram to provide lightning-fast video downloads from multiple social media platforms. What started as a simple downloader has evolved into a comprehensive system with advanced user management, real-time monitoring, and intelligent blocking capabilities.
+
+**🌟 Now Vibe-Coded:** This project has been meticulously crafted with attention to detail, intuitive design, and a focus on user experience - that's the essence of vibe-coding!
 
 ---
 
@@ -17,24 +33,59 @@
 
 ### 🎥 **Multi-Platform Support**
 - **TikTok** ⚡ - High-speed downloads with age-restriction bypass
-- **YouTube** 🎬 - Video extraction with optimal quality selection
+- **Instagram** 📸 - Reels, Stories, and media support
 - **Twitter/X** 🐦 - Video and media downloads
-- **Instagram** 📸 - Reels and media support
-- **And more...** 🌐 - Extensible architecture for adding new platforms
+- **Snapchat** 👻 - Media extraction support
+- **Tumblr** 🎭 - Video and media downloads
 
-### 🛡️ **Smart Features**
-- **Rate Limiting** ⏱️ - Configurable per-user download limits
-- **File Management** 🗂️ - Automatic cleanup with configurable retention
-- **Caching System** 💾 - Smart duplicate detection to save bandwidth
-- **Error Handling** 🛠️ - Comprehensive logging and error recovery
-- **User Management** 👥 - 62+ active users with detailed analytics
+### 🛡️ **Advanced Security & Management**
+- **User Blocking System** 🚫 - Comprehensive admin controls with real-time monitoring
+- **Rate Limiting** ⏱️ - Configurable per-user download limits (10/hour default)
+- **Smart Error Handling** 🛠️ - Comprehensive logging and automatic recovery
+- **Session Management** 🔐 - Secure user sessions with IP tracking
 
 ### 📊 **Real-Time Dashboard**
-- **Live Statistics** 📈 - Monitor downloads, errors, and top sources
+- **Live Statistics** 📈 - Monitor downloads, users, errors, and top sources
 - **Interactive Charts** 📊 - Beautiful data visualizations using Chart.js
-- **User Analytics** 👤 - Track individual download patterns
-- **Error Monitoring** 🔍 - Real-time error logs with timestamps
+- **User Analytics** 👥 - Track individual download patterns with 270+ active users
+- **Error Monitoring** 🔍 - Real-time error logs with detailed timestamps
+- **User Management Table** 📋 - Complete user directory with search functionality
 - **Performance Metrics** ⚡ - System health and performance indicators
+
+### 🎨 **Modern UI/UX**
+- **Responsive Design** 📱 - Works seamlessly on all devices
+- **Dark Theme** 🌙 - Easy on the eyes for extended use
+- **Real-time Updates** ⚡ - Live data refresh without page reloads
+- **Interactive Tables** 📊 - Sortable, searchable data tables
+- **Search Filters** 🔍 - Advanced filtering for users and downloads
+
+---
+
+## 🎯 **Use Cases**
+
+### 📱 **Social Media Archiving**
+- Save TikTok videos before they're deleted
+- Archive Instagram Stories and Reels
+- Download Twitter/X threads and media
+- Preserve Snapchat memories
+
+### 🎓 **Educational Content**
+- Download tutorial videos for offline viewing
+- Save educational TikToks and Instagram content
+- Archive webinars and online courses
+- Create offline learning libraries
+
+### 💼 **Content Creation**
+- Download source videos for editing
+- Save inspirational content for mood boards
+- Archive competitor content for analysis
+- Build video reference libraries
+
+### 🏢 **Business Applications**
+- Monitor competitor content strategies
+- Save client-approved videos for portfolios
+- Archive brand-related social media content
+- Create content databases for marketing teams
 
 ---
 
@@ -48,8 +99,9 @@ python --version
 # Git (for cloning)
 git --version
 
-# SQLite3 (usually comes with Python)
-sqlite3 --version
+# System packages (Ubuntu/Debian)
+sudo apt update
+sudo apt install python3-pip ffmpeg
 ```
 
 ### 🛠️ **Installation**
@@ -62,7 +114,7 @@ cd cooldl-v2
 
 2. **Create virtual environment**
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
@@ -71,277 +123,199 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. **Environment Configuration**
+4. **Set up environment variables**
 ```bash
-# Copy the template
 cp .env.example .env
-
-# Edit with your configuration
-nano .env
+# Edit .env with your configuration
 ```
 
-**Required Environment Variables:**
-```env
-# Telegram Bot Token
-BOT_TOKEN=your_bot_token_here
-
-# Channel ID for downloads
-CHANNEL_ID=your_channel_id_here
-
-# Database Path (optional, defaults to cooldl.db)
-DATABASE=./cooldl.db
-
-# (Optional) Log Channel ID
-LOG_CHANNEL_ID=your_log_channel_id_here
-
-# (Optional) Download Caption
-CAPTION=Your custom caption here
-
-# (Optional) Rate Limiting
-MAX_CONCURRENT=3
-MAX_DOWNLOADS_PER_HOUR=10
-MAX_FILE_SIZE=500  # MB
-DOWNLOAD_TIMEOUT=300  # seconds
-FILE_RETENTION_DAYS=7
-```
-
-5. **Initialize Database**
+5. **Initialize database**
 ```bash
-python init_db.py
+python3 -c "from database import init_db; init_db()"
 ```
 
-6. **Start the Services**
+6. **Start the bot**
 ```bash
 # Start the Telegram bot
-python async_downloader.py
+python3 async_downloader.py &
 
-# In another terminal, start the web dashboard
-uvicorn main:app --host 0.0.0.0 --port 8000
+# Start the web dashboard
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+### 🔧 **Configuration**
+
+Create a `.env` file in the project root:
+
+```env
+# Bot Configuration
+BOT_TOKEN=your_telegram_bot_token
+CHANNEL_ID=your_channel_id
+LOG_CHANNEL_ID=your_log_channel_id
+
+# Database Configuration
+DATABASE_URL=sqlite:///cooldl.db
+
+# Rate Limiting (per hour)
+MAX_DOWNLOADS_PER_HOUR=10
+
+# File Management
+MAX_FILE_SIZE=500  # MB
+FILE_RETENTION_DAYS=7
+
+# Admin Configuration
+ADMIN_IDS=123456789,987654321
 ```
 
 ---
 
-## 📊 **Project Statistics**
+## 📊 **Dashboard Features**
 
-<div align="center">
+### 🔍 **Users Management**
+- **Complete User Directory** with 270+ active users
+- **Advanced Search** by display name or username
+- **Real-time Statistics** showing downloads per user
+- **Direct Telegram Links** to user profiles
+- **Export capabilities** for user analytics
 
-| Metric | Value | 📈 |
-|--------|-------|----|
-| **Total Users** | **62+** | 👥 |
-| **Videos Downloaded** | **1,535+** | 🎥 |
-| **Platforms Supported** | **4+** | 🌐 |
-| **Database Records** | **1,535** | 💾 |
-| **Error Rate** | **< 2%** | ✅ |
+### 🛡️ **Admin Panel**
+- **Block/Unblock Users** with detailed logging
+- **Real-time Monitoring** of user activities
+- **Error Log Management** with search and filtering
+- **System Statistics** and performance metrics
+- **User Activity Tracking** with timestamps
 
-</div>
-
-### 🔥 **Recent Achievements**
-- ✅ **Database Schema Migration** - Added session tracking and fixed missing columns
-- ✅ **Historical Data Import** - Migrated 703+ records from logs to downloads table
-- ✅ **Performance Optimization** - Reduced error rates and improved download speeds
-- ✅ **Dashboard Enhancement** - Real-time statistics and beautiful visualizations
-
----
-
-## 🏗️ **Architecture Overview**
-
-```
-cooldl-v2/
-├── 🤖 async_downloader.py    # Telegram bot main logic
-├── 🌐 main.py               # FastAPI web dashboard
-├── 💾 models.py             # Database models and queries
-├── 📄 downloader.py         # Video download utilities
-├── 🗃️ database.py          # Database connection helpers
-├── 📋 requirements.txt     # Python dependencies
-├── 🔧 .env                  # Environment variables (not in repo)
-├── 🗄️ cooldl.db            # SQLite database (auto-created)
-├── 📁 downloads/            # Downloaded files storage
-├── 📁 static/               # Static web assets
-├── 📁 templates/            # HTML templates
-└── 🎨 static/styles.css     # Dashboard styling
-```
-
-### 💾 **Database Schema**
-
-#### **Users Table**
-```sql
-CREATE TABLE users (
-    chat_id INTEGER PRIMARY KEY,
-    name TEXT,
-    username TEXT,
-    joined_at TEXT
-);
-```
-
-#### **Downloads Table** 
-```sql
-CREATE TABLE downloads (
-    file_id TEXT PRIMARY KEY,
-    timestamp TEXT,
-    username TEXT,
-    chat_id INTEGER,
-    name TEXT,
-    url TEXT,
-    source TEXT,
-    user_id TEXT,
-    filename TEXT,
-    file_size INTEGER,
-    session TEXT
-);
-```
-
-#### **Logs Table**
-```sql
-CREATE TABLE logs (
-    timestamp TEXT,
-    action TEXT,
-    username TEXT,
-    chat_id INTEGER,
-    status TEXT
-);
-```
+### 📈 **Analytics**
+- **Download Statistics** by platform and user
+- **Error Rate Analysis** with trend detection
+- **User Growth Tracking** over time
+- **Performance Metrics** for system optimization
+- **Custom Reports** generation
 
 ---
 
-## 🎮 **Usage Examples**
+## 🛠️ **API & Integration**
 
-### **Telegram Bot Usage**
-```
-/send https://tiktok.com/@user/video/123456
-⬇️ Downloads the TikTok video
+### 🔌 **Bot Commands**
+- **Basic Usage**: Send a video URL to download
+- **Help**: `/help` - Shows supported platforms
+- **Admin Commands**:
+  - `/block <user>` - Block a user
+  - `/unblock <user>` - Unblock a user
+  - `/blocked` - Show blocked users list
+  - `/check <user>` - Check user status
 
-/send https://youtube.com/watch?v=dQw4w9WgXcQ
-⬇️ Downloads the YouTube video
-
-/stats
-📊 Shows download statistics
-```
-
-### **Web Dashboard Usage**
-- **Access:** `http://localhost:8000`
-- **Login:** `/login` (credentials configured in code)
-- **Dashboard:** `/dashboard` (requires authentication)
-- **Features:**
-  - Real-time download monitoring
-  - Interactive charts and statistics
-  - Error log viewing
-  - Bot restart functionality
-
----
-
-## 🔧 **Configuration Options**
-
-### **Rate Limiting**
+### 🌐 **Web API**
 ```python
-# In .env
-MAX_CONCURRENT=3              # Simultaneous downloads
-MAX_DOWNLOADS_PER_HOUR=10     # Per-user hourly limit
-DOWNLOAD_TIMEOUT=300          # Seconds per download
-FILE_RETENTION_DAYS=7         # Days to keep files
-MAX_FILE_SIZE=500            # MB limit per file
-```
+# Get dashboard stats
+GET /dashboard
 
-### **Performance Tuning**
-```python
-# Database optimization
-PRAGMA journal_mode=WAL;
-PRAGMA busy_timeout=20000;
+# Get recent downloads
+GET /api/downloads
 
-# Download optimization
-concurrent_fragment_downloads: 4
-retries: 5
-socket_timeout: 30
+# Get error logs
+GET /api/errors
+
+# Get users data
+GET /api/users
 ```
 
 ---
 
-## 🚨 **Troubleshooting**
+## 🏗️ **Architecture**
 
-### **Common Issues**
+### 🔄 **System Components**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Telegram Bot  │────│   Web Dashboard │────│   SQLite DB    │
+│ (async_downloader) │    │   (FastAPI)     │    │   (cooldl.db)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                │
+                    ┌─────────────────┐
+                    │ Blocking System │
+                    │ (blocks.py)     │
+                    └─────────────────┘
+```
 
-1. **"Database locked" errors**
-   ```bash
-   # Add WAL mode to SQLite
-   sqlite3 cooldl.db "PRAGMA journal_mode=WAL;"
-   ```
+### 🎯 **Key Features**
+- **Self-Hosted**: Complete control over your data and privacy
+- **Scalable**: Handles multiple concurrent downloads efficiently
+- **Secure**: User authentication and admin controls
+- **Extensible**: Easy to add new platforms and features
+- **Reliable**: Comprehensive error handling and logging
 
-2. **Download timeouts**
-   ```bash
-   # Increase timeout in .env
-   DOWNLOAD_TIMEOUT=600
-   ```
+---
 
-3. **Permission errors**
-   ```bash
-   # Fix file permissions
-   chmod -R 755 downloads/
-   ```
+## 🔧 **Development**
 
-### **Debug Mode**
+### 🤝 **Contributing**
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### 🐛 **Debugging**
 ```bash
-# Enable verbose logging
-export PYTHONPATH=.
-python async_downloader.py --verbose
+# Enable debug logging
+export LOG_LEVEL=DEBUG
+
+# View bot logs
+tail -f async_downloader.log
+
+# View dashboard logs
+tail -f server.log
 ```
 
----
-
-## 🤝 **Contributing**
-
-We love contributions! Here's how you can help:
-
-1. **🐛 Report Bugs** - Open an issue with detailed description
-2. **✨ Request Features** - Suggest new functionality
-3. **💻 Submit Pull Requests** - Code contributions welcome
-4. **📚 Improve Documentation** - Help make docs better
-
-### **Development Setup**
+### 📚 **Testing**
 ```bash
-# Fork and clone
-git clone https://github.com/your-username/cooldl-v2.git
+# Run unit tests
+python3 -m pytest
 
-# Create feature branch
-git checkout -b feature/amazing-feature
+# Test blocking system
+python3 test_blocking_system.py
 
-# Make changes and commit
-git commit -m "feat: add amazing feature"
-
-# Push and open PR
-git push origin feature/amazing-feature
+# Test dashboard
+python3 test_dashboard.py
 ```
 
 ---
 
-## 📄 **License**
+## 📜 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-<div align="center">
+---
 
-**Made with ❤️ by [Fahad](https://github.com/Fahad-BA)**
+## 🙏 **Acknowledgments**
 
-**⭐ If this project helped you, please consider starring the repository!**
-
-</div>
+- **Telegram Bot API** for the amazing bot platform
+- **yt-dlp** for the robust video downloading capabilities
+- **FastAPI** for the lightning-fast web framework
+- **Chart.js** for beautiful data visualizations
+- **All Contributors** who helped improve this project
 
 ---
 
-<div align="center">
+## 📧 **Contact**
 
-**📞 Questions? Contact me:**
-<br>
-🐦 Twitter: [@Fahad_BA](https://twitter.com/Fahad_BA)
-<br>
-💼 LinkedIn: [Fahad Albalawi](https://linkedin.com/in/fahad-albalawi)
-<br>
-📧 Email: fahad@example.com
+**Developer**: Fahad Alhuqaili
 
-</div>
+- 🐦 **Twitter/X**: [@falhuqaili](https://twitter.com/falhuqaili)
+- 💼 **LinkedIn**: [/in/fahad-alhuqaili](https://linkedin.com/in/fahad-alhuqaili)
+- 📧 **Email**: [Fahad@Alhuqaili.com](mailto:Fahad@Alhuqaili.com)
+- 🤖 **Bot**: [t.me/CoolDLBot](https://t.me/CoolDLBot)
+
+---
+
+## ⭐ **Star History**
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Fahad-BA/cooldl-v2&type=Date)](https://star-history.com/#Fahad-BA/cooldl-v2&Date)
 
 ---
 
 <p align="center">
-  <img src="https://img.shields.io/badge/built%20with-❤️-red?style=for-the-badge" alt="Built with love">
-  <img src="https://img.shields.io/badge/status-active-brightgreen?style=for-the-badge" alt="Status">
-  <img src="https://img.shields.io/badge/maintained-yes-blue?style=for-the-badge" alt="Maintained">
+  <em>Made with ❤️ by Fahad Alhuqaili | Now Vibe-Coded ✨</em>
 </p>
