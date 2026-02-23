@@ -391,6 +391,278 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
+    /* ===== Sort Controls ===== */
+    .sort-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      margin-top: 0.25rem;
+      box-shadow: var(--shadow-xl);
+      z-index: 9999;
+      overflow: hidden;
+      min-width: 220px;
+    }
+
+    .sort-option {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    .sort-option:hover {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--text-primary);
+    }
+
+    .sort-option.active {
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .sort-option i {
+      width: 16px;
+      text-align: center;
+    }
+
+    .order-btn {
+      padding: var(--space-xs) var(--space-sm);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      height: 32px;
+    }
+
+    .order-btn:hover {
+      color: var(--text-primary);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .order-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Ensure dropdown is visible */
+    .sort-dropdown {
+      position: absolute !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      transform: none !important;
+    }
+
+    /* Ensure table body is visible */
+    #usersTableBody {
+      display: table-row-group !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    #usersTableBody tr {
+      display: table-row !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    /* Fix horizontal scrolling for tables */
+    .table-container {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      white-space: nowrap !important;
+    }
+
+    .table {
+      display: table !important;
+      visibility: visible !important;
+      min-width: 100% !important;
+    }
+
+    /* Ensure table cells don't wrap */
+    .table th,
+    .table td {
+      white-space: nowrap !important;
+      min-width: fit-content !important;
+    }
+
+    /* Make username column wrap if needed */
+    .table td:nth-child(3) {
+      max-width: 200px;
+      white-space: normal !important;
+      word-break: break-all;
+      overflow-wrap: break-word;
+    }
+
+    /* Make display name column wrap if needed */
+    .table td:nth-child(2) {
+      max-width: 250px;
+      white-space: normal !important;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    /* Error Logs table styling */
+    .error-text {
+      color: var(--error);
+      font-family: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+      font-size: 0.8rem;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      max-width: 400px;
+      line-height: 1.4;
+    }
+
+    /* Timestamp column styling for better readability */
+    #errorLogsTable .timestamp {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+      white-space: normal !important;
+      word-break: break-word !important;
+      overflow-wrap: break-word !important;
+      max-width: 200px;
+      line-height: 1.3;
+    }
+
+    /* Make error logs table more compact */
+    #errorLogsTable {
+      font-size: 0.85rem;
+    }
+
+    #errorLogsTable th,
+    #errorLogsTable td {
+      padding: var(--space-xs) var(--space-sm) !important;
+    }
+
+    /* Error Logs mobile responsive design */
+    @media (max-width: 768px) {
+      #errorLogsTable .table-container {
+        margin: 0 calc(-1 * var(--space-md));
+        padding: 0 var(--space-md);
+      }
+      
+      #errorLogsTable {
+        font-size: 0.75rem;
+      }
+      
+      #errorLogsTable th,
+      #errorLogsTable td {
+        padding: var(--space-xs) !important;
+      }
+      
+      /* Make error text wrap nicely on mobile */
+      #errorLogsTable .error-text {
+        max-width: 150px !important;
+        font-size: 0.7rem !important;
+        line-height: 1.3 !important;
+      }
+      
+      /* Make timestamp column compact on mobile */
+      #errorLogsTable .timestamp {
+        max-width: 120px !important;
+        font-size: 0.65rem !important;
+        line-height: 1.2 !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #errorLogsTable .error-text {
+        max-width: 100px !important;
+        font-size: 0.65rem !important;
+      }
+      
+      #errorLogsTable .timestamp {
+        max-width: 80px !important;
+        font-size: 0.6rem !important;
+      }
+      
+      #errorLogsTable th,
+      #errorLogsTable td {
+        padding: 2px 4px !important;
+      }
+    }
+
+    /* Custom scrollbar for webkit browsers */
+    .table-container::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+
+    .table-container::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-light);
+    }
+
+    /* Responsive table adjustments */
+    @media (max-width: 768px) {
+      .table-container {
+        margin: 0 calc(-1 * var(--space-md));
+        padding: 0 var(--space-md);
+      }
+      
+      .table {
+        font-size: 0.75rem;
+      }
+      
+      .table th,
+      .table td {
+        padding: var(--space-xs) !important;
+      }
+      
+      .table td:nth-child(2),
+      .table td:nth-child(3) {
+        max-width: 120px !important;
+        font-size: 0.7rem !important;
+      }
+      
+      /* Hide less important columns on mobile */
+      .table th:nth-child(5),
+      .table td:nth-child(5) {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .table td:nth-child(4) {
+        max-width: 80px !important;
+        font-size: 0.65rem !important;
+      }
+      
+      .badge {
+        font-size: 0.65rem !important;
+        padding: 0.125rem 0.375rem !important;
+      }
+    }
+
     /* ===== Loading States ===== */
     .loading {
       display: flex;
@@ -625,11 +897,11 @@
             <table class="table" id="recentDownloadsTable">
               <thead>
                 <tr>
-                  <th><i class="fas fa-file"></i> File</th>
-                  <th><i class="fas fa-user"></i> User</th>
-                  <th><i class="fas fa-server"></i> Source</th>
-                  <th><i class="fas fa-link"></i> Link</th>
-                  <th><i class="fas fa-clock"></i> Timestamp</th>
+                  <th><i class="fas fa-file"></i></th>
+                  <th><i class="fas fa-user"></i></th>
+                  <th><i class="fas fa-server"></i></th>
+                  <th><i class="fas fa-link"></i></th>
+                  <th><i class="fas fa-clock"></i></th>
                 </tr>
               </thead>
               <tbody>
@@ -638,7 +910,7 @@
                   <td>
                     <div style="display: flex; align-items: center; gap: var(--space-sm);">
                       <i class="fas fa-file-alt" style="color: var(--primary);"></i>
-                      {{ d['filename'] if d.get('filename') else '-' }}
+                      {{ d['filename']|replace('.mp4', '')|replace('.mp3', '')|replace('.avi', '')|replace('.mov', '')|replace('.mkv', '')|replace('.jpg', '')|replace('.png', '')|replace('.gif', '')|replace('.zip', '')|replace('.rar', '')|replace('.pdf', '') if d.get('filename') else '-' }}
                     </div>
                   </td>
                   <td>
@@ -646,9 +918,8 @@
                   </td>
                   <td>{{ d['source'] }}</td>
                   <td>
-                    <a href="{{ d['url'] }}" target="_blank" class="btn btn-primary btn-sm">
+                    <a href="{{ d['url'] }}" target="_blank" class="btn btn-primary btn-sm" title="Open Link">
                       <i class="fas fa-external-link-alt"></i>
-                      Open
                     </a>
                   </td>
                   <td class="timestamp" data-ts="{{ d['timestamp']|e }}">{{ d['timestamp'] }}</td>
@@ -671,30 +942,97 @@
           </h3>
         </div>
         <div class="card-body">
-          <!-- Search Filter -->
+          <!-- Advanced Filters -->
           <div style="margin-bottom: var(--space-lg); padding: var(--space-md); background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border-color); border-radius: var(--border-radius);">
-            <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm);">
+            
+            <!-- Search Row -->
+            <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md);">
               <i class="fas fa-search" style="color: var(--primary);"></i>
               <label for="userSearchInput" style="font-weight: 500; color: var(--text-primary);">Search Users:</label>
             </div>
             <input type="text" id="userSearchInput" placeholder="Search by display name or username..." 
                    style="width: 100%; padding: var(--space-sm); background: var(--bg-secondary); border: 1px solid var(--border-color); 
-                          border-radius: var(--border-radius); color: var(--text-primary); font-size: 0.875rem;"
+                          border-radius: var(--border-radius); color: var(--text-primary); font-size: 0.875rem; margin-bottom: var(--space-md);"
                    onkeyup="filterUsers()">
+            
+            <!-- Sorting Controls -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: var(--space-md); margin-top: var(--space-md);">
+              <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm);">
+                <i class="fas fa-sort" style="color: var(--primary);"></i>
+                <label style="font-weight: 500; color: var(--text-primary);">Sort Users:</label>
+              </div>
+              
+              <!-- Sort By Dropdown -->
+              <div style="display: flex; gap: var(--space-md); align-items: center; flex-wrap: wrap;">
+                <div style="position: relative; display: inline-block;">
+                  <button onclick="toggleSortByDropdown()" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: var(--space-xs); min-width: 180px; justify-content: space-between;">
+                    <span id="sortByDisplay">
+                      <i class="fas fa-download"></i> Downloads Count
+                    </span>
+                    <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
+                  </button>
+                  
+                  <div id="sortByDropdown" class="sort-dropdown" style="display: none;">
+                    <div onclick="setSortBy('downloads_count')" class="sort-option active">
+                      <i class="fas fa-download"></i> Downloads Count
+                    </div>
+                    <div onclick="setSortBy('last_used')" class="sort-option">
+                      <i class="fas fa-clock"></i> Last Date Used
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Check Data button -->
+                <button onclick="checkUsersData()" class="btn btn-secondary btn-sm" style="padding: var(--space-xs); font-size: 0.75rem;" title="Check users data">
+                  <i class="fas fa-database"></i>
+                </button>
+                
+                <!-- Clear Filters button -->
+                <button onclick="clearFilters()" class="btn btn-secondary btn-sm" style="padding: var(--space-xs); font-size: 0.75rem;" title="Clear all filters">
+                  <i class="fas fa-times"></i>
+                </button>
+                
+                <!-- Debug button -->
+                <button onclick="debugDropdown()" class="btn btn-secondary btn-sm" style="padding: var(--space-xs); font-size: 0.75rem;" title="Debug Dropdown">
+                  <i class="fas fa-bug"></i>
+                </button>
+                
+                <!-- Order Toggle -->
+                <div style="display: flex; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden;">
+                  <button id="descBtn" onclick="setSortOrder('DESC')" class="order-btn active" title="Descending (high to low)">
+                    <i class="fas fa-sort-amount-down"></i>
+                  </button>
+                  <button id="ascBtn" onclick="setSortOrder('ASC')" class="order-btn" title="Ascending (low to high)">
+                    <i class="fas fa-sort-amount-up"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="table-container">
+            <!-- Debug: Show users data count -->
+            <div id="usersDebug" style="margin-bottom: var(--space-md); padding: var(--space-sm); background: rgba(99, 102, 241, 0.1); border-radius: var(--border-radius); font-size: 0.75rem; display: none;">
+              <strong>Debug:</strong> Users data loaded: <span id="usersCount">{{ users_data|length }}</span> records
+            </div>
+            
+            <!-- Scroll indicator -->
+            <div id="scrollIndicator" style="display: none; margin-bottom: var(--space-sm); padding: var(--space-xs) var(--space-sm); background: rgba(246, 173, 85, 0.1); border: 1px solid var(--warning); border-radius: var(--border-radius); font-size: 0.75rem; color: var(--warning);">
+              <i class="fas fa-arrows-alt-h"></i> <strong>Scroll horizontally →</strong> to see more columns
+            </div>
+            
             <table class="table" id="usersTable">
               <thead>
                 <tr>
-                  <th><i class="fas fa-hashtag"></i> Chat ID</th>
-                  <th><i class="fas fa-user"></i> Display Name</th>
-                  <th><i class="fas fa-at"></i> Username</th>
-                  <th><i class="fas fa-download"></i> Downloads Count</th>
+                  <th><i class="fas fa-hashtag"></i></th>
+                  <th><i class="fas fa-user"></i></th>
+                  <th><i class="fas fa-at"></i></th>
+                  <th><i class="fas fa-download"></i></th>
+                  <th><i class="fas fa-clock"></i></th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="usersTableBody">
                 {% for user in users_data %}
-                <tr>
+                <tr data-chat-id="{{ user[0] }}" data-name="{{ user[1] or 'Unknown' }}" data-username="{{ user[2] or '' }}" data-downloads="{{ user[3] or 0 }}" data-last-used="{{ user[4] or '' }}">
                   <td>
                     <span class="badge badge-primary">{{ user[0] }}</span>
                   </td>
@@ -715,6 +1053,19 @@
                   </td>
                   <td>
                     <span class="badge badge-success">{{ user[3] if user[3] else 0 }}</span>
+                  </td>
+                  <td>
+                    {% if user[4] %}
+                      <span style="font-size: 0.75rem; font-family: monospace; color: var(--text-secondary);" data-ts="{{ user[4] }}">{{ user[4] }}</span>
+                    {% else %}
+                      <span class="text-muted" style="font-size: 0.75rem;">Never</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: var(--space-xl); color: var(--error);">
+                    <i class="fas fa-exclamation-triangle"></i> No users data available
                   </td>
                 </tr>
                 {% endfor %}
@@ -739,23 +1090,19 @@
             <table class="table" id="errorLogsTable">
               <thead>
                 <tr>
-                  <th><i class="fas fa-hashtag"></i> Ref #</th>
-                  <th><i class="fas fa-bug"></i> Error</th>
-                  <th><i class="fas fa-clock"></i> Timestamp</th>
+                  <th><i class="fas fa-bug"></i></th>
+                  <th><i class="fas fa-clock"></i></th>
                 </tr>
               </thead>
               <tbody>
                 {% for e in errors %}
                 <tr>
                   <td>
-                    <span class="badge badge-error">{{ e['file_id'] if 'file_id' in e.keys() else 'N/A' }}</span>
-                  </td>
-                  <td>
-                    <div class="error-text">
+                    <div class="error-text" style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
                       {{ e['error'] if 'error' in e.keys() else 'Unknown error' }}
                     </div>
                   </td>
-                  <td class="timestamp" data-ts="{{ e['timestamp']|e }}">{{ e['timestamp'] }}</td>
+                  <td class="timestamp" data-ts="{{ e['timestamp']|e }}" style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">{{ e['timestamp'] }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -768,37 +1115,504 @@
 
   <script>
 
-    // Filter Users Function
+    // Filter Users Function (Enhanced for client-side sorting)
     function filterUsers() {
         const input = document.getElementById('userSearchInput');
         const filter = input.value.toLowerCase();
-        const table = document.getElementById('usersTable');
-        const rows = table.getElementsByTagName('tr');
+        const tbody = document.getElementById('usersTableBody');
+        const rows = tbody.querySelectorAll('tr');
         
-        for (let i = 1; i < rows.length; i++) {  // Start from 1 to skip header
-            const row = rows[i];
-            const cells = row.getElementsByTagName('td');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const chatId = row.dataset.chatId || '';
+            const displayName = row.dataset.name || '';
+            const username = row.dataset.username || '';
             
-            let displayName = '';
-            let username = '';
+            const matchesSearch = chatId.toLowerCase().includes(filter) || 
+                                displayName.toLowerCase().includes(filter) || 
+                                username.toLowerCase().includes(filter);
             
-            // Get display name from second column
-            if (cells[1]) {
-                displayName = cells[1].textContent || cells[1].innerText;
-            }
-            
-            // Get username from third column
-            if (cells[2]) {
-                username = cells[2].textContent || cells[2].innerText;
-            }
-            
-            // Check if either field contains the filter text
-            if (displayName.toLowerCase().includes(filter) || username.toLowerCase().includes(filter)) {
+            if (matchesSearch) {
                 row.style.display = '';
+                row.style.opacity = '1';
+                visibleCount++;
             } else {
                 row.style.display = 'none';
             }
+        });
+        
+        // Show search result count
+        showSearchResults(visibleCount, rows.length, filter);
+    }
+
+    // Show search results indicator
+    function showSearchResults(visible, total, searchTerm) {
+        // Remove existing indicator
+        const existingIndicator = document.querySelector('.search-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
         }
+        
+        if (searchTerm && visible < total) {
+            const indicator = document.createElement('div');
+            indicator.className = 'search-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 60px;
+                right: 20px;
+                background: var(--secondary);
+                color: white;
+                padding: var(--space-sm) var(--space-md);
+                border-radius: var(--border-radius);
+                font-size: 0.75rem;
+                font-weight: 500;
+                z-index: 9999;
+                animation: slideIn 0.3s ease;
+            `;
+            indicator.textContent = `Showing ${visible} of ${total} users`;
+            
+            document.body.appendChild(indicator);
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                indicator.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => indicator.remove(), 300);
+            }, 3000);
+        }
+    }
+
+    // Toggle Sort By Dropdown
+    function toggleSortByDropdown() {
+      const dropdown = document.getElementById('sortByDropdown');
+      console.log('toggleSortByDropdown called');
+      console.log('Current display:', dropdown.style.display);
+      
+      if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        dropdown.style.display = 'block';
+        console.log('Setting display to block');
+        
+        // Force the dropdown to be visible and properly positioned
+        dropdown.style.visibility = 'visible';
+        dropdown.style.opacity = '1';
+        dropdown.style.pointerEvents = 'auto';
+        
+        // Close dropdown when clicking outside
+        setTimeout(() => {
+          document.addEventListener('click', closeSortByDropdownOutside);
+        }, 100);
+      } else {
+        dropdown.style.display = 'none';
+        console.log('Setting display to none');
+      }
+    }
+
+    // Close dropdown when clicking outside
+    function closeSortByDropdownOutside(event) {
+      const dropdown = document.getElementById('sortByDropdown');
+      const button = event.target.closest('button[onclick="toggleSortByDropdown()"]');
+      
+      if (!dropdown.contains(event.target) && !button) {
+        dropdown.style.display = 'none';
+        document.removeEventListener('click', closeSortByDropdownOutside);
+      }
+    }
+
+    // Set Sort By Option
+    function setSortBy(sortBy) {
+      console.log('setSortBy called with:', sortBy);
+      const dropdown = document.getElementById('sortByDropdown');
+      const display = document.getElementById('sortByDisplay');
+      
+      // Update display
+      if (sortBy === 'downloads_count') {
+        display.innerHTML = '<i class="fas fa-download"></i> Downloads Count';
+      } else if (sortBy === 'last_used') {
+        display.innerHTML = '<i class="fas fa-clock"></i> Last Date Used';
+      }
+      
+      // Update active state
+      dropdown.querySelectorAll('.sort-option').forEach(option => {
+        option.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Hide dropdown
+      dropdown.style.display = 'none';
+      
+      // Apply client-side sorting (no page refresh!)
+      applySorting(sortBy);
+    }
+
+    // Set Sort Order
+    function setSortOrder(sortOrder) {
+      // Update button states
+      const descBtn = document.getElementById('descBtn');
+      const ascBtn = document.getElementById('ascBtn');
+      
+      if (sortOrder === 'DESC') {
+        descBtn.classList.add('active');
+        ascBtn.classList.remove('active');
+      } else {
+        ascBtn.classList.add('active');
+        descBtn.classList.remove('active');
+      }
+      
+      // Apply client-side sorting (no page refresh!)
+      const sortBy = getCurrentSortBy();
+      applySorting(sortBy, sortOrder);
+    }
+
+    // Get current sort by value
+    function getCurrentSortBy() {
+      const display = document.getElementById('sortByDisplay').textContent;
+      if (display.includes('Downloads Count')) {
+        return 'downloads_count';
+      } else if (display.includes('Last Date Used')) {
+        return 'last_used';
+      }
+      return 'downloads_count';
+    }
+
+    // Apply Sorting (Client-side - No Page Refresh!)
+    function applySorting(sortBy, sortOrder) {
+      // Get current sort order if not provided
+      if (!sortOrder) {
+        const descBtn = document.getElementById('descBtn');
+        sortOrder = descBtn.classList.contains('active') ? 'DESC' : 'ASC';
+      }
+      
+      console.log(`Sorting by: ${sortBy}, Order: ${sortOrder}`);
+      
+      // Get all table rows
+      const tbody = document.getElementById('usersTableBody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      
+      // Sort the rows
+      rows.sort((a, b) => {
+        let aValue, bValue;
+        
+        if (sortBy === 'downloads_count') {
+          aValue = parseInt(a.dataset.downloads) || 0;
+          bValue = parseInt(b.dataset.downloads) || 0;
+        } else if (sortBy === 'last_used') {
+          aValue = a.dataset.lastUsed || '';
+          bValue = b.dataset.lastUsed || '';
+          
+          // Handle empty values (users with no downloads)
+          if (aValue === '' && bValue === '') return 0;
+          if (aValue === '') return sortOrder === 'ASC' ? 1 : -1;
+          if (bValue === '') return sortOrder === 'ASC' ? -1 : 1;
+          
+          // Convert to dates for comparison
+          aValue = new Date(aValue);
+          bValue = new Date(bValue);
+        }
+        
+        // Compare values
+        if (aValue < bValue) return sortOrder === 'ASC' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'ASC' ? 1 : -1;
+        return 0;
+      });
+      
+      // Add a subtle animation effect
+      rows.forEach((row, index) => {
+        row.style.transition = 'all 0.3s ease';
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(10px)';
+        
+        setTimeout(() => {
+          tbody.appendChild(row);
+          setTimeout(() => {
+            row.style.opacity = '1';
+            row.style.transform = 'translateY(0)';
+          }, 50);
+        }, index * 30);
+      });
+      
+      // Update URL without page refresh
+      const url = new URL(window.location);
+      url.searchParams.set('sort_by', sortBy);
+      url.searchParams.set('sort_order', sortOrder);
+      window.history.replaceState({}, '', url);
+      
+      // Show sorting indicator
+      const sortByText = sortBy === 'downloads_count' ? 'Downloads Count' : 'Last Date Used';
+      const orderText = sortOrder === 'DESC' ? '↓ High to Low' : '↑ Low to High';
+      showSortingIndicator(sortByText, orderText);
+    }
+
+    // Clear all filters and reset to default
+    function clearFilters() {
+      console.log('Clearing all filters...');
+      
+      // Reset search
+      const searchInput = document.getElementById('userSearchInput');
+      if (searchInput) {
+        searchInput.value = '';
+        filterUsers(); // Show all users
+      }
+      
+      // Reset sort to default
+      const display = document.getElementById('sortByDisplay');
+      if (display) {
+        display.innerHTML = '<i class="fas fa-download"></i> Downloads Count';
+      }
+      
+      // Reset sort order buttons
+      const descBtn = document.getElementById('descBtn');
+      const ascBtn = document.getElementById('ascBtn');
+      if (descBtn) descBtn.classList.add('active');
+      if (ascBtn) ascBtn.classList.remove('active');
+      
+      // Reset dropdown active states
+      const dropdown = document.getElementById('sortByDropdown');
+      if (dropdown) {
+        dropdown.querySelectorAll('.sort-option').forEach(option => {
+          option.classList.remove('active');
+        });
+        const firstOption = dropdown.querySelector('.sort-option');
+        if (firstOption) firstOption.classList.add('active');
+      }
+      
+      // Apply default sorting
+      applySorting('downloads_count', 'DESC');
+      
+      // Clear URL parameters
+      const url = new URL(window.location);
+      url.searchParams.delete('sort_by');
+      url.searchParams.delete('sort_order');
+      window.history.replaceState({}, '', url);
+      
+      // Show feedback
+      showSortingIndicator('Filters Cleared', '↺ Reset to default');
+    }
+
+    // Check users data function
+    function checkUsersData() {
+      const tbody = document.getElementById('usersTableBody');
+      const rows = tbody.querySelectorAll('tr');
+      const debugDiv = document.getElementById('usersDebug');
+      
+      console.log('=== Users Data Check ===');
+      console.log('Table rows found:', rows.length);
+      console.log('Debug div:', debugDiv);
+      
+      // Show debug info
+      if (debugDiv) {
+        debugDiv.style.display = 'block';
+        debugDiv.innerHTML = `<strong>Debug:</strong> Users data loaded: ${rows.length} records`;
+        
+        if (rows.length === 0) {
+          debugDiv.innerHTML += ' <span style="color: var(--error);">⚠️ No users data found!</span>';
+          debugDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+        } else {
+          debugDiv.innerHTML += ' <span style="color: var(--success);">✅ Data loaded successfully</span>';
+          debugDiv.style.background = 'rgba(16, 185, 129, 0.1)';
+        }
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          debugDiv.style.display = 'none';
+        }, 5000);
+      }
+      
+      // Check if rows are hidden
+      let visibleRows = 0;
+      rows.forEach(row => {
+        if (row.style.display !== 'none') {
+          visibleRows++;
+        }
+      });
+      
+      console.log('Visible rows:', visibleRows);
+      console.log('Hidden rows:', rows.length - visibleRows);
+      
+      // Check CSS styles
+      if (rows.length > 0) {
+        const firstRow = rows[0];
+        console.log('First row styles:', window.getComputedStyle(firstRow));
+        console.log('First row parent styles:', window.getComputedStyle(firstRow.parentNode));
+      }
+    }
+
+    // Show sorting indicator
+    function showSortingIndicator(sortBy, sortOrder) {
+      // Remove any existing indicators
+      const existingIndicator = document.querySelector('.sorting-indicator');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+      
+      // Create and show new indicator
+      const indicator = document.createElement('div');
+      indicator.className = 'sorting-indicator';
+      indicator.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--primary);
+        color: white;
+        padding: var(--space-sm) var(--space-md);
+        border-radius: var(--border-radius);
+        font-size: 0.75rem;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+      `;
+      
+      const sortByText = sortBy === 'downloads_count' ? 'Downloads Count' : 'Last Date Used';
+      const orderText = sortOrder === 'DESC' ? '↓ High to Low' : '↑ Low to High';
+      indicator.textContent = `Sorted by ${sortByText} ${orderText}`;
+      
+      document.body.appendChild(indicator);
+      
+      // Auto-hide after 2 seconds
+      setTimeout(() => {
+        indicator.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => indicator.remove(), 300);
+      }, 2000);
+    }
+
+    // Add animations for sorting indicator
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Debug function for dropdown
+    function debugDropdown() {
+      const dropdown = document.getElementById('sortByDropdown');
+      const button = document.querySelector('button[onclick="toggleSortByDropdown()"]');
+      
+      console.log('=== Dropdown Debug Info ===');
+      console.log('Dropdown element:', dropdown);
+      console.log('Dropdown display:', dropdown ? dropdown.style.display : 'NOT FOUND');
+      console.log('Dropdown position:', dropdown ? getComputedStyle(dropdown).position : 'NOT FOUND');
+      console.log('Dropdown z-index:', dropdown ? getComputedStyle(dropdown).zIndex : 'NOT FOUND');
+      console.log('Dropdown visibility:', dropdown ? getComputedStyle(dropdown).visibility : 'NOT FOUND');
+      console.log('Dropdown opacity:', dropdown ? getComputedStyle(dropdown).opacity : 'NOT FOUND');
+      console.log('Button element:', button);
+      console.log('Button position:', button ? getComputedStyle(button).position : 'NOT FOUND');
+      console.log('Button z-index:', button ? getComputedStyle(button).zIndex : 'NOT FOUND');
+      
+      // Test toggle
+      if (dropdown) {
+        console.log('Testing toggle...');
+        if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+          dropdown.style.display = 'block';
+          dropdown.style.visibility = 'visible';
+          dropdown.style.opacity = '1';
+          dropdown.style.pointerEvents = 'auto';
+          console.log('Set to visible');
+        } else {
+          dropdown.style.display = 'none';
+          console.log('Set to hidden');
+        }
+      }
+    }
+
+    // Initialize sorting state from URL parameters (if any)
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM Content Loaded - Checking users table...');
+      
+      // Debug: Check if users data is loaded
+      const tbody = document.getElementById('usersTableBody');
+      const rows = tbody.querySelectorAll('tr');
+      console.log('Users table rows found:', rows.length);
+      
+      if (rows.length === 0) {
+        console.error('No users data found in table! Check backend data.');
+        // Show debug info automatically
+        setTimeout(() => {
+          checkUsersData();
+        }, 500);
+      } else {
+        console.log('Users data loaded successfully:', rows.length, 'rows');
+      }
+      
+      // Check if horizontal scrolling is needed
+      checkHorizontalScroll();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const sortBy = urlParams.get('sort_by') || 'downloads_count';
+      const sortOrder = urlParams.get('sort_order') || 'DESC';
+      
+      // Update sort by display
+      const display = document.getElementById('sortByDisplay');
+      if (sortBy === 'downloads_count') {
+        display.innerHTML = '<i class="fas fa-download"></i> Downloads Count';
+      } else if (sortBy === 'last_used') {
+        display.innerHTML = '<i class="fas fa-clock"></i> Last Date Used';
+      }
+      
+      // Update sort order buttons
+      const descBtn = document.getElementById('descBtn');
+      const ascBtn = document.getElementById('ascBtn');
+      if (sortOrder === 'DESC') {
+        descBtn.classList.add('active');
+        ascBtn.classList.remove('active');
+      } else {
+        ascBtn.classList.add('active');
+        descBtn.classList.remove('active');
+      }
+      
+      // Apply initial sorting if URL parameters exist
+      if (urlParams.get('sort_by')) {
+        console.log('Applying initial sorting from URL parameters:', sortBy, sortOrder);
+        applySorting(sortBy, sortOrder);
+      }
+    });
+
+    // Check if horizontal scrolling is needed
+    function checkHorizontalScroll() {
+      const tableContainers = document.querySelectorAll('.table-container');
+      
+      tableContainers.forEach(container => {
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
+        const scrollIndicator = container.parentElement.querySelector('#scrollIndicator');
+        
+        console.log('Table container:', 'scrollWidth:', scrollWidth, 'clientWidth:', clientWidth);
+        
+        if (scrollWidth > clientWidth) {
+          // Show scroll indicator
+          if (scrollIndicator) {
+            scrollIndicator.style.display = 'block';
+          }
+          
+          // Hide scroll indicator after user scrolls
+          let scrollTimer;
+          container.addEventListener('scroll', function() {
+            if (scrollIndicator) {
+              scrollIndicator.style.display = 'none';
+            }
+            
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => {
+              // Check if user is still at the beginning
+              if (container.scrollLeft === 0) {
+                if (scrollIndicator) {
+                  scrollIndicator.style.display = 'block';
+                }
+              }
+            }, 3000);
+          });
+        } else {
+          // Hide scroll indicator if not needed
+          if (scrollIndicator) {
+            scrollIndicator.style.display = 'none';
+          }
+        }
+      });
     }
     
     
@@ -929,6 +1743,7 @@
         hour12: false
       });
 
+      // Format error log timestamps
       document.querySelectorAll('td.timestamp').forEach(td => {
         const raw = td.getAttribute('data-ts') || td.textContent;
         let d = new Date(raw);
@@ -993,6 +1808,50 @@
       
       // Initialize blocked users count
       refreshBlockedUsersCount();
+      
+      // Format user table timestamps (last_used column)
+      const fmt = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+
+      document.querySelectorAll('#usersTable td[data-ts]').forEach(td => {
+        const raw = td.getAttribute('data-ts');
+        let d = new Date(raw);
+        
+        if (isNaN(d.getTime())) {
+          d = new Date(raw + 'Z');
+        }
+        
+        if (!isNaN(d.getTime())) {
+          const formatted = fmt.format(d);
+          td.textContent = formatted;
+          
+          // Add relative time
+          const now = new Date();
+          const diffMs = now - d;
+          const diffMins = Math.floor(diffMs / 60000);
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
+          
+          let relative = '';
+          if (diffMins < 1) {
+            relative = 'just now';
+          } else if (diffMins < 60) {
+            relative = `${diffMins}m ago`;
+          } else if (diffHours < 24) {
+            relative = `${diffHours}h ago`;
+          } else {
+            relative = `${diffDays}d ago`;
+          }
+          
+          td.title = relative;
+        }
+      });
     });
 
     // Block User Function
