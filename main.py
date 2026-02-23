@@ -105,13 +105,24 @@ async def dashboard(request: Request):
         cur.execute("SELECT COUNT(*) FROM users")
         users_count = cur.fetchone()[0]
         
-        # Get users data for the users table
-        cur.execute("""
-            SELECT u.chat_id, u.name, u.username, COUNT(d.chat_id) as downloads_count
+        # Get users data for the users table with sorting support
+        sort_by = request.query_params.get('sort_by', 'downloads_count')  # Default: downloads_count
+        sort_order = request.query_params.get('sort_order', 'DESC')  # Default: DESC
+        
+        # Validate sort_by parameter
+        if sort_by not in ['downloads_count', 'last_used']:
+            sort_by = 'downloads_count'
+        if sort_order not in ['ASC', 'DESC']:
+            sort_order = 'DESC'
+        
+        cur.execute(f"""
+            SELECT u.chat_id, u.name, u.username, 
+                   COUNT(d.chat_id) as downloads_count,
+                   MAX(d.timestamp) as last_used
             FROM users u 
             LEFT JOIN downloads d ON u.chat_id = d.chat_id 
             GROUP BY u.chat_id, u.name, u.username
-            ORDER BY downloads_count DESC
+            ORDER BY {sort_by} {sort_order}
         """)
         users_data = cur.fetchall()
         

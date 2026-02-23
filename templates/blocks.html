@@ -1,103 +1,603 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - CoolDL Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .blocked-user {
-            background-color: #fff5f5;
-            border-left: 4px solid #dc3545;
-        }
-        .search-bar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .table-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management - CoolDL Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/tailwind.css">
+  <style>
+    /* ===== Modern Design System ===== */
+    :root {
+      /* Primary Colors */
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      
+      /* Secondary Colors */
+      --secondary: #ec4899;
+      --secondary-dark: #db2777;
+      --secondary-light: #f472b6;
+      
+      /* Neutral Colors */
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      
+      /* Status Colors */
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+      
+      /* Spacing */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+      
+      /* Borders & Shadows */
+      --border-radius: 0.75rem;
+      --border-color: #334155;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f3a 100%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-lg) var(--space-2xl);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-md);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .logo i {
+      color: var(--primary);
+      font-size: 1.8rem;
+    }
+
+    .header-nav {
+      display: flex;
+      gap: var(--space-lg);
+    }
+
+    .header-nav a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--border-radius);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .header-nav a:hover,
+    .header-nav a.active {
+      color: var(--text-primary);
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid var(--primary-light);
+    }
+
+    .header-nav a.active {
+      background: rgba(99, 102, 241, 0.2);
+    }
+
+    /* ===== Main Layout ===== */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--space-2xl);
+    }
+
+    /* ===== Cards ===== */
+    .card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-lg);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: var(--space-xl);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary-light);
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .card-title i {
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      padding: var(--space-sm) var(--space-lg);
+      border: none;
+      border-radius: var(--border-radius);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+      border-color: var(--primary-light);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--error), #dc2626);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #dc2626, var(--error));
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #059669);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: linear-gradient(135deg, #059669, var(--success));
+      transform: translateY(-1px);
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, var(--info), #2563eb);
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: linear-gradient(135deg, #2563eb, var(--info));
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    /* ===== Tables ===== */
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .table th,
+    .table td {
+      padding: var(--space-sm) var(--space-md);
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table th {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .table tbody tr {
+      transition: background-color 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .blocked-user {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid var(--error);
+    }
+
+    /* ===== Status Badges ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-primary {
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--primary);
+    }
+
+    .badge-info {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--info);
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .badge-error {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--error);
+    }
+
+    /* ===== Form Controls ===== */
+    .form-control {
+      padding: var(--space-sm);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .form-select {
+      padding: var(--space-sm);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    /* ===== Modals ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-dialog {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-xl);
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: var(--space-lg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .modal-body {
+      padding: var(--space-lg);
+    }
+
+    .modal-footer {
+      padding: var(--space-lg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-sm);
+    }
+
+    .close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .close:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+
+    /* ===== Utility Classes ===== */
+    .text-center { text-align: center; }
+    .text-muted { color: var(--text-muted); }
+    .d-flex { display: flex; }
+    .justify-content-between { justify-content: space-between; }
+    .align-items-center { align-items: center; }
+    .gap-2 { gap: var(--space-sm); }
+    .mb-3 { margin-bottom: var(--space-md); }
+    .mb-4 { margin-bottom: var(--space-lg); }
+    .mt-3 { margin-top: var(--space-md); }
+    .input-group { display: flex; align-items: center; }
+    .input-group-text {
+      padding: var(--space-sm);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-right: none;
+      border-radius: var(--border-radius) 0 0 var(--border-radius);
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    .input-group .form-control {
+      border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    }
+
+    /* ===== Responsive Design ===== */
+    @media (max-width: 768px) {
+      .container {
+        padding: var(--space-lg);
+      }
+
+      .header-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .header-nav {
+        flex-direction: column;
+        gap: var(--space-sm);
+        width: 100%;
+      }
+
+      .table th,
+      .table td {
+        padding: var(--space-xs) var(--space-sm);
+        font-size: 0.75rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">CoolDL Dashboard</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">Dashboard</a>
-                <a class="nav-link active" href="/blocks">User Blocks</a>
-            </div>
-        </div>
-    </nav>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <a href="/" class="logo">
+        <i class="fas fa-download"></i>
+        <span>CoolDL Dashboard</span>
+      </a>
+      
+      <nav class="header-nav">
+        <a href="/">
+          <i class="fas fa-tachometer-alt"></i>
+          Dashboard
+        </a>
+        <a href="/blocks" class="active">
+          <i class="fas fa-user-shield"></i>
+          User Blocks
+        </a>
+      </nav>
+    </div>
+  </header>
 
-    <div class="container mt-4">
-        <div class="search-bar">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1><i class="fas fa-user-shield"></i> User Blocking System</h1>
-                    <p class="mb-0">Manage blocked users and permissions</p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <a href="#blockModal" data-bs-toggle="modal" class="btn btn-light">
-                        <i class="fas fa-plus"></i> Block User
-                    </a>
-                </div>
-            </div>
-        </div>
+    <!-- Main Content -->
+  <div class="container">
+    <!-- Header Card -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <h2 class="card-title">
+          <i class="fas fa-user-shield"></i>
+          User Blocking System
+        </h2>
+        <button onclick="openBlockModal()" class="btn btn-primary">
+          <i class="fas fa-plus"></i>
+          Block User
+        </button>
+      </div>
+      <div class="card-body">
+        <p style="color: var(--text-secondary); margin-bottom: 0;">
+          Manage blocked users and control access to the CoolDL bot
+        </p>
+      </div>
+    </div>
 
-        {# Flash messages removed for simplicity #}
-
-        <div class="table-actions">
-            <h3>Blocked Users ({{ blocked_users|length }})</h3>
-            <div class="action-buttons">
-                <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search users..." style="width: 200px;">
-                <button class="btn btn-outline-primary btn-sm" onclick="searchUsers()">
-                    <i class="fas fa-search"></i>
-                </button>
-            </div>
+    <!-- Search and Actions Card -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-users"></i>
+          Blocked Users ({{ blocked_users|length }})
+        </h3>
+        <div style="display: flex; gap: var(--space-sm); align-items: center;">
+          <input type="text" class="form-control" id="searchInput" placeholder="Search users..." style="width: 250px; margin: 0;" onkeypress="handleSearchKeypress(event)">
+          <button onclick="searchUsers()" class="btn btn-secondary" title="Search users">
+            <i class="fas fa-search"></i>
+          </button>
         </div>
+      </div>
+      <div class="card-body">
 
         {% if blocked_users %}
-            <div class="table-responsive">
-                <table class="table table-hover" id="blockedUsersTable">
-                    <thead class="table-dark">
+            <div class="table-container">
+                <table class="table" id="blockedUsersTable">
+                    <thead>
                         <tr>
                             <th><input type="checkbox" id="selectAll"></th>
-                            <th>Chat ID</th>
-                            <th>Username</th>
-                            <th>Filename</th>
-                            <th>Reason</th>
-                            <th>Blocked At</th>
-                            <th>Blocked By</th>
-                            <th>Actions</th>
+                            <th><i class="fas fa-hashtag"></i> Chat ID</th>
+                            <th><i class="fas fa-at"></i> Username</th>
+                            <th><i class="fas fa-file"></i> Filename</th>
+                            <th><i class="fas fa-comment"></i> Reason</th>
+                            <th><i class="fas fa-clock"></i> Blocked At</th>
+                            <th><i class="fas fa-user-shield"></i> Blocked By</th>
+                            <th><i class="fas fa-cogs"></i> Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for user in blocked_users %}
                             <tr class="blocked-user">
                                 <td><input type="checkbox" class="user-checkbox" value="{{ user.chat_id }}"></td>
-                                <td><strong>{{ user.chat_id }}</strong></td>
+                                <td><span class="badge badge-primary">{{ user.chat_id }}</span></td>
                                 <td>
                                     {% if user.username %}
-                                        <span class="badge bg-info">@{{ user.username }}</span>
+                                        <span class="badge badge-info">@{{ user.username }}</span>
                                     {% else %}
                                         <span class="text-muted">N/A</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if user.filename %}
-                                        <code>{{ user.filename }}</code>
+                                        <code style="background: var(--bg-tertiary); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.75rem;">{{ user.filename }}</code>
                                     {% else %}
                                         <span class="text-muted">N/A</span>
                                     {% endif %}
@@ -109,14 +609,14 @@
                                         <span class="text-muted">No reason</span>
                                     {% endif %}
                                 </td>
-                                <td><small>{{ user.blocked_at }}</small></td>
-                                <td><small>{{ user.blocked_by or 'Unknown' }}</small></td>
+                                <td><span style="font-size: 0.75rem; font-family: monospace;">{{ user.blocked_at }}</span></td>
+                                <td><span style="font-size: 0.75rem;">{{ user.blocked_by or 'Unknown' }}</span></td>
                                 <td>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-success btn-sm" onclick="unblockUser({{ user.chat_id }})" title="Unblock User">
+                                    <div style="display: flex; gap: 0.25rem;">
+                                        <button onclick="unblockUser({{ user.chat_id }})" class="btn btn-success btn-sm" title="Unblock User">
                                             <i class="fas fa-unlock"></i>
                                         </button>
-                                        <button class="btn btn-info btn-sm" onclick="viewUserDetails({{ user|tojson }})" title="View Details">
+                                        <button onclick="viewUserDetails({{ user|tojson }})" class="btn btn-info btn-sm" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     </div>
@@ -127,38 +627,42 @@
                 </table>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mt-3">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border-color);">
                 <div>
-                    <button class="btn btn-outline-danger btn-sm" onclick="bulkUnblock()">
+                    <button onclick="bulkUnblock()" class="btn btn-danger">
                         <i class="fas fa-unlock"></i> Unblock Selected
                     </button>
                 </div>
-                <small class="text-muted">Total blocked users: {{ blocked_users|length }}</small>
+                <span class="text-muted" style="font-size: 0.875rem;">Total blocked users: {{ blocked_users|length }}</span>
             </div>
         {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
-                <h4>No Blocked Users</h4>
-                <p class="text-muted">All users currently have access to the bot.</p>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#blockModal">
+            <div style="text-align: center; padding: var(--space-2xl);">
+                <i class="fas fa-users-slash" style="font-size: 3rem; color: var(--text-muted); margin-bottom: var(--space-lg);"></i>
+                <h3 style="margin-bottom: var(--space-sm);">No Blocked Users</h3>
+                <p class="text-muted" style="margin-bottom: var(--space-lg);">All users currently have access to the bot.</p>
+                <button onclick="openBlockModal()" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Block First User
                 </button>
             </div>
         {% endif %}
+      </div>
     </div>
 
     <!-- Block User Modal -->
-    <div class="modal fade" id="blockModal" tabindex="-1">
+    <div class="modal" id="blockModal">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Block User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h3 class="modal-title">
+                        <i class="fas fa-user-shield"></i>
+                        Block User
+                    </h3>
+                    <button type="button" class="close" onclick="closeBlockModal()">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <form id="blockUserForm">
+                    <form id="blockUserForm" onsubmit="event.preventDefault();">
                         <div class="mb-3">
-                            <label class="form-label">Block By *</label>
+                            <label style="display: block; margin-bottom: var(--space-sm); font-weight: 500; color: var(--text-primary);">Block By *</label>
                             <select class="form-select" id="blockType" onchange="toggleBlockInputs()">
                                 <option value="chat_id">Chat ID</option>
                                 <option value="username">Username</option>
@@ -167,12 +671,12 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Chat ID</label>
+                            <label style="display: block; margin-bottom: var(--space-sm); font-weight: 500; color: var(--text-primary);">Chat ID</label>
                             <input type="text" class="form-control" id="chatId" placeholder="Enter numeric chat ID">
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Username</label>
+                            <label style="display: block; margin-bottom: var(--space-sm); font-weight: 500; color: var(--text-primary);">Username</label>
                             <div class="input-group">
                                 <span class="input-group-text">@</span>
                                 <input type="text" class="form-control" id="username" placeholder="username" disabled>
@@ -180,18 +684,18 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Filename</label>
+                            <label style="display: block; margin-bottom: var(--space-sm); font-weight: 500; color: var(--text-primary);">Filename</label>
                             <input type="text" class="form-control" id="filename" placeholder="video_filename.mp4" disabled>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Reason (Optional)</label>
-                            <textarea class="form-control" id="reason" rows="2" placeholder="Reason for blocking..."></textarea>
+                            <label style="display: block; margin-bottom: var(--space-sm); font-weight: 500; color: var(--text-primary);">Reason (Optional)</label>
+                            <textarea class="form-control" id="reason" rows="3" placeholder="Reason for blocking..."></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeBlockModal()">Cancel</button>
                     <button type="button" class="btn btn-danger" onclick="blockUser()">
                         <i class="fas fa-ban"></i> Block User
                     </button>
@@ -201,12 +705,15 @@
     </div>
 
     <!-- User Details Modal -->
-    <div class="modal fade" id="userDetailsModal" tabindex="-1">
+    <div class="modal" id="userDetailsModal">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">User Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h3 class="modal-title">
+                        <i class="fas fa-user"></i>
+                        User Details
+                    </h3>
+                    <button type="button" class="close" onclick="closeUserDetailsModal()">&times;</button>
                 </div>
                 <div class="modal-body" id="userDetailsContent">
                     <!-- User details will be loaded here -->
@@ -215,8 +722,26 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Modal functions
+        function openBlockModal() {
+            document.getElementById('blockModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBlockModal() {
+            document.getElementById('blockModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+            // Reset form
+            document.getElementById('blockUserForm').reset();
+            toggleBlockInputs();
+        }
+
+        function closeUserDetailsModal() {
+            document.getElementById('userDetailsModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
         function toggleBlockInputs() {
             const blockType = document.getElementById('blockType').value;
             const chatIdInput = document.getElementById('chatId');
@@ -326,50 +851,54 @@
         function viewUserDetails(user) {
             const content = document.getElementById('userDetailsContent');
             content.innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Chat ID:</strong><br>
-                        ${user.chat_id}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md);">
+                    <div>
+                        <strong style="color: var(--primary);">Chat ID:</strong><br>
+                        <span class="badge badge-primary">${user.chat_id}</span>
                     </div>
-                    <div class="col-md-6">
-                        <strong>Username:</strong><br>
-                        ${user.username ? '@' + user.username : 'N/A'}
-                    </div>
-                </div>
-                <hr>
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Filename:</strong><br>
-                        ${user.filename || 'N/A'}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Blocked At:</strong><br>
-                        ${user.blocked_at}
+                    <div>
+                        <strong style="color: var(--primary);">Username:</strong><br>
+                        ${user.username ? '<span class="badge badge-info">@' + user.username + '</span>' : '<span class="text-muted">N/A</span>'}
                     </div>
                 </div>
-                <hr>
-                <div class="row">
-                    <div class="col-md-12">
-                        <strong>Reason:</strong><br>
-                        ${user.reason || 'No reason provided'}
+                <hr style="border-color: var(--border-color); margin: var(--space-md) 0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md);">
+                    <div>
+                        <strong style="color: var(--primary);">Filename:</strong><br>
+                        ${user.filename ? '<code style="background: var(--bg-tertiary); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.75rem;">' + user.filename + '</code>' : '<span class="text-muted">N/A</span>'}
+                    </div>
+                    <div>
+                        <strong style="color: var(--primary);">Blocked At:</strong><br>
+                        <span style="font-size: 0.875rem; font-family: monospace;">${user.blocked_at}</span>
                     </div>
                 </div>
-                <hr>
-                <div class="row">
-                    <div class="col-md-12">
-                        <strong>Blocked By:</strong><br>
-                        ${user.blocked_by || 'Unknown'}
-                    </div>
+                <hr style="border-color: var(--border-color); margin: var(--space-md) 0;">
+                <div style="margin-bottom: var(--space-md);">
+                    <strong style="color: var(--primary);">Reason:</strong><br>
+                    <p style="margin: var(--space-sm) 0; color: var(--text-secondary);">${user.reason || 'No reason provided'}</p>
+                </div>
+                <hr style="border-color: var(--border-color); margin: var(--space-md) 0;">
+                <div>
+                    <strong style="color: var(--primary);">Blocked By:</strong><br>
+                    <span style="color: var(--text-secondary);">${user.blocked_by || 'Unknown'}</span>
                 </div>
             `;
             
-            new bootstrap.Modal(document.getElementById('userDetailsModal')).show();
+            document.getElementById('userDetailsModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
         }
 
         function searchUsers() {
             const query = document.getElementById('searchInput').value;
             if (query.trim()) {
                 window.location.href = `/blocks/search?q=${encodeURIComponent(query)}`;
+            }
+        }
+
+        function handleSearchKeypress(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchUsers();
             }
         }
 
@@ -410,15 +939,34 @@
         }
 
         // Select all functionality
-        document.getElementById('selectAll').addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('.user-checkbox');
-            checkboxes.forEach(cb => cb.checked = this.checked);
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.user-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                });
+            }
+
+            // Add fade-in animation to cards
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('fade-in');
+                }, index * 100);
+            });
         });
 
-        // Enter key search
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchUsers();
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            const blockModal = document.getElementById('blockModal');
+            const userDetailsModal = document.getElementById('userDetailsModal');
+            
+            if (event.target === blockModal) {
+                closeBlockModal();
+            }
+            if (event.target === userDetailsModal) {
+                closeUserDetailsModal();
             }
         });
     </script>

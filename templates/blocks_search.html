@@ -1,157 +1,518 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Blocked Users - CoolDL Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .search-results {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-        }
-        .blocked-user {
-            background-color: #fff5f5;
-            border-left: 4px solid #dc3545;
-        }
-        .back-link {
-            color: white;
-            text-decoration: none;
-        }
-        .back-link:hover {
-            color: #f8f9fa;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Blocked Users - CoolDL Dashboard</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/tailwind.css">
+  <style>
+    /* ===== Modern Design System ===== */
+    :root {
+      /* Primary Colors */
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      
+      /* Secondary Colors */
+      --secondary: #ec4899;
+      --secondary-dark: #db2777;
+      --secondary-light: #f472b6;
+      
+      /* Neutral Colors */
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      
+      /* Status Colors */
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+      
+      /* Spacing */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+      
+      /* Borders & Shadows */
+      --border-radius: 0.75rem;
+      --border-color: #334155;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f3a 100%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: var(--space-lg) var(--space-2xl);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-md);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .logo i {
+      color: var(--primary);
+      font-size: 1.8rem;
+    }
+
+    .header-nav {
+      display: flex;
+      gap: var(--space-lg);
+    }
+
+    .header-nav a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--border-radius);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .header-nav a:hover,
+    .header-nav a.active {
+      color: var(--text-primary);
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid var(--primary-light);
+    }
+
+    .header-nav a.active {
+      background: rgba(99, 102, 241, 0.2);
+    }
+
+    /* ===== Main Layout ===== */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--space-2xl);
+    }
+
+    /* ===== Cards ===== */
+    .card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-lg);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: var(--space-xl);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary-light);
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .card-title i {
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      padding: var(--space-sm) var(--space-lg);
+      border: none;
+      border-radius: var(--border-radius);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+      border-color: var(--primary-light);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #059669);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: linear-gradient(135deg, #059669, var(--success));
+      transform: translateY(-1px);
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, var(--info), #2563eb);
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: linear-gradient(135deg, #2563eb, var(--info));
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    /* ===== Tables ===== */
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .table th,
+    .table td {
+      padding: var(--space-sm) var(--space-md);
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table th {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .table tbody tr {
+      transition: background-color 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .blocked-user {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid var(--error);
+    }
+
+    /* ===== Status Badges ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-primary {
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--primary);
+    }
+
+    .badge-info {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--info);
+    }
+
+    /* ===== Utility Classes ===== */
+    .text-center { text-align: center; }
+    .text-muted { color: var(--text-muted); }
+    .btn-group { display: flex; gap: 0.25rem; }
+
+    /* ===== Responsive Design ===== */
+    @media (max-width: 768px) {
+      .container {
+        padding: var(--space-lg);
+      }
+
+      .header-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .header-nav {
+        flex-direction: column;
+        gap: var(--space-sm);
+        width: 100%;
+      }
+
+      .table th,
+      .table td {
+        padding: var(--space-xs) var(--space-sm);
+        font-size: 0.75rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">CoolDL Dashboard</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">Dashboard</a>
-                <a class="nav-link active" href="/blocks">User Blocks</a>
-            </div>
-        </div>
-    </nav>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <a href="/" class="logo">
+        <i class="fas fa-download"></i>
+        <span>CoolDL Dashboard</span>
+      </a>
+      
+      <nav class="header-nav">
+        <a href="/">
+          <i class="fas fa-tachometer-alt"></i>
+          Dashboard
+        </a>
+        <a href="/blocks" class="active">
+          <i class="fas fa-user-shield"></i>
+          User Blocks
+        </a>
+      </nav>
+    </div>
+  </header>
 
-    <div class="container mt-4">
-        <div class="search-results">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1><i class="fas fa-search"></i> Search Results</h1>
-                    <p class="mb-0">
-                        Search for: <strong>"{{ query }}"</strong><br>
-                        Found <strong>{{ blocked_users|length }}</strong> blocked users
-                    </p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <a href="/blocks" class="back-link">
-                        <i class="fas fa-arrow-left"></i> Back to Blocks
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        {% if blocked_users %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Chat ID</th>
-                            <th>Username</th>
-                            <th>Filename</th>
-                            <th>Reason</th>
-                            <th>Blocked At</th>
-                            <th>Blocked By</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in blocked_users %}
-                            <tr class="blocked-user">
-                                <td><strong>{{ user.chat_id }}</strong></td>
-                                <td>
-                                    {% if user.username %}
-                                        <span class="badge bg-info">@{{ user.username }}</span>
-                                    {% else %}
-                                        <span class="text-muted">N/A</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if user.filename %}
-                                        <code>{{ user.filename }}</code>
-                                    {% else %}
-                                        <span class="text-muted">N/A</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if user.reason %}
-                                        {{ user.reason }}
-                                    {% else %}
-                                        <span class="text-muted">No reason</span>
-                                    {% endif %}
-                                </td>
-                                <td><small>{{ user.blocked_at }}</small></td>
-                                <td><small>{{ user.blocked_by or 'Unknown' }}</small></td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-success btn-sm" onclick="unblockUser({{ user.chat_id }})" title="Unblock User">
-                                            <i class="fas fa-unlock"></i>
-                                        </button>
-                                        <a href="/blocks#user-{{ user.chat_id }}" class="btn btn-info btn-sm" title="View in main list">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                <h4>No Results Found</h4>
-                <p class="text-muted">No blocked users match your search query: "{{ query }}"</p>
-                <a href="/blocks" class="btn btn-primary">
-                    <i class="fas fa-arrow-left"></i> Back to Blocks
-                </a>
-            </div>
-        {% endif %}
+    <!-- Main Content -->
+  <div class="container">
+    <!-- Search Results Card -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <h2 class="card-title">
+          <i class="fas fa-search"></i>
+          Search Results
+        </h2>
+        <a href="/blocks" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i>
+          Back to Blocks
+        </a>
+      </div>
+      <div class="card-body">
+        <p style="color: var(--text-secondary); margin-bottom: 0;">
+          Search for: <strong style="color: var(--primary);">"{{ query }}"</strong><br>
+          Found <strong style="color: var(--primary);">{{ blocked_users|length }}</strong> blocked users
+        </p>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Results Card -->
+    {% if blocked_users %}
+      <div class="card fade-in">
+        <div class="card-body">
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-hashtag"></i> Chat ID</th>
+                  <th><i class="fas fa-at"></i> Username</th>
+                  <th><i class="fas fa-file"></i> Filename</th>
+                  <th><i class="fas fa-comment"></i> Reason</th>
+                  <th><i class="fas fa-clock"></i> Blocked At</th>
+                  <th><i class="fas fa-user-shield"></i> Blocked By</th>
+                  <th><i class="fas fa-cogs"></i> Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in blocked_users %}
+                  <tr class="blocked-user">
+                    <td><span class="badge badge-primary">{{ user.chat_id }}</span></td>
+                    <td>
+                      {% if user.username %}
+                        <span class="badge badge-info">@{{ user.username }}</span>
+                      {% else %}
+                        <span class="text-muted">N/A</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if user.filename %}
+                        <code style="background: var(--bg-tertiary); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.75rem;">{{ user.filename }}</code>
+                      {% else %}
+                        <span class="text-muted">N/A</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if user.reason %}
+                        {{ user.reason }}
+                      {% else %}
+                        <span class="text-muted">No reason</span>
+                      {% endif %}
+                    </td>
+                    <td><span style="font-size: 0.75rem; font-family: monospace;">{{ user.blocked_at }}</span></td>
+                    <td><span style="font-size: 0.75rem;">{{ user.blocked_by or 'Unknown' }}</span></td>
+                    <td>
+                      <div class="btn-group">
+                        <button onclick="unblockUser({{ user.chat_id }})" class="btn btn-success btn-sm" title="Unblock User">
+                          <i class="fas fa-unlock"></i>
+                        </button>
+                        <a href="/blocks#user-{{ user.chat_id }}" class="btn btn-info btn-sm" title="View in main list">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="card fade-in">
+        <div class="card-body">
+          <div style="text-align: center; padding: var(--space-2xl);">
+            <i class="fas fa-search" style="font-size: 3rem; color: var(--text-muted); margin-bottom: var(--space-lg);"></i>
+            <h3 style="margin-bottom: var(--space-sm);">No Results Found</h3>
+            <p class="text-muted" style="margin-bottom: var(--space-lg);">No blocked users match your search query: "{{ query }}"</p>
+            <a href="/blocks" class="btn btn-primary">
+              <i class="fas fa-arrow-left"></i> Back to Blocks
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
     <script>
-        async function unblockUser(chatId) {
-            if (!confirm('Are you sure you want to unblock this user?')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch('/blocks/api/unblock', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ chat_id: chatId })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('User unblocked successfully!');
-                    window.location.reload();
-                } else {
-                    alert('Error: ' + result.message);
-                }
-            } catch (error) {
-                alert('Error unblocking user: ' + error.message);
-            }
+    async function unblockUser(chatId) {
+        if (!confirm('Are you sure you want to unblock this user?')) {
+            return;
         }
+        
+        try {
+            const response = await fetch('/blocks/api/unblock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ chat_id: chatId })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('User unblocked successfully!');
+                window.location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            alert('Error unblocking user: ' + error.message);
+        }
+    }
+
+    // Add fade-in animation to cards
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.add('fade-in');
+            }, index * 100);
+        });
+    });
     </script>
 </body>
 </html>

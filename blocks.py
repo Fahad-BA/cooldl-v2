@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from typing import Optional, Dict, List, Any
 
-from database import get_connection
+from models import get_connection
 
 # Block message in both English and Arabic
 BLOCK_MESSAGE = "You've been blocked from using this bot — أنت محظور من استخدام البوت"
