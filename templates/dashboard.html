@@ -570,30 +570,66 @@
         padding: var(--space-xs) !important;
       }
       
+      /* Enforce 70%/30% width distribution on mobile */
+      #errorLogsTable th:nth-child(1),
+      #errorLogsTable td:nth-child(1) {
+        width: 70% !important;
+        min-width: 70% !important;
+        max-width: 70% !important;
+      }
+      
+      #errorLogsTable th:nth-child(2),
+      #errorLogsTable td:nth-child(2) {
+        width: 30% !important;
+        min-width: 30% !important;
+        max-width: 30% !important;
+      }
+      
       /* Make error text wrap nicely on mobile */
       #errorLogsTable .error-text {
-        max-width: 150px !important;
+        max-width: 100% !important;
         font-size: 0.7rem !important;
         line-height: 1.3 !important;
       }
       
       /* Make timestamp column compact on mobile */
       #errorLogsTable .timestamp {
-        max-width: 120px !important;
+        max-width: 100% !important;
         font-size: 0.65rem !important;
         line-height: 1.2 !important;
       }
     }
 
     @media (max-width: 480px) {
-      #errorLogsTable .error-text {
-        max-width: 100px !important;
+      #errorLogsTable {
         font-size: 0.65rem !important;
       }
       
-      #errorLogsTable .timestamp {
-        max-width: 80px !important;
+      /* Enforce 70%/30% width distribution on small mobile */
+      #errorLogsTable th:nth-child(1),
+      #errorLogsTable td:nth-child(1) {
+        width: 70% !important;
+        min-width: 70% !important;
+        max-width: 70% !important;
+      }
+      
+      #errorLogsTable th:nth-child(2),
+      #errorLogsTable td:nth-child(2) {
+        width: 30% !important;
+        min-width: 30% !important;
+        max-width: 30% !important;
+      }
+      
+      #errorLogsTable .error-text {
+        max-width: 100% !important;
         font-size: 0.6rem !important;
+        line-height: 1.2 !important;
+      }
+      
+      #errorLogsTable .timestamp {
+        max-width: 100% !important;
+        font-size: 0.55rem !important;
+        line-height: 1.1 !important;
       }
       
       #errorLogsTable th,
@@ -893,6 +929,12 @@
           </h3>
         </div>
         <div class="card-body">
+          <!-- Pagination Info -->
+          <div style="margin-bottom: var(--space-md); padding: var(--space-sm); background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 0.75rem; color: var(--text-secondary);">
+            <i class="fas fa-info-circle" style="color: var(--primary); margin-right: var(--space-xs);"></i>
+            Showing {{ downloads_pagination.start_item }}-{{ downloads_pagination.end_item }} of {{ downloads_pagination.total_items }} downloads
+          </div>
+          
           <div class="table-container">
             <table class="table" id="recentDownloadsTable">
               <thead>
@@ -924,10 +966,48 @@
                   </td>
                   <td class="timestamp" data-ts="{{ d['timestamp']|e }}">{{ d['timestamp'] }}</td>
                 </tr>
+                {% else %}
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: var(--space-xl); color: var(--text-muted);">
+                    <i class="fas fa-inbox"></i> No downloads found
+                  </td>
+                </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
+          
+          <!-- Pagination Controls -->
+          {% if downloads_pagination.total_pages > 1 %}
+          <div style="margin-top: var(--space-lg); display: flex; justify-content: center; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
+            <!-- Previous Button -->
+            <button onclick="navigateDownloadsPage({{ downloads_pagination.current_page - 1 }})" 
+                    class="btn btn-secondary btn-sm" 
+                    {% if not downloads_pagination.has_prev %}disabled{% endif %}
+                    title="Previous page">
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            
+            <!-- Page Numbers -->
+            <div style="display: flex; gap: var(--space-xs); align-items: center;">
+              {% set start_page = [1, downloads_pagination.current_page - 2] | max %}{% set end_page = [downloads_pagination.total_pages + 1, downloads_pagination.current_page + 3] | min %}{% for page in range(start_page, end_page) %}
+                <button onclick="navigateDownloadsPage({{ page }})" 
+                        class="btn {% if page == downloads_pagination.current_page %}btn-primary{% else %}btn-secondary{% endif %} btn-sm"
+                        title="Page {{ page }}">
+                  {{ page }}
+                </button>
+              {% endfor %}
+            </div>
+            
+            <!-- Next Button -->
+            <button onclick="navigateDownloadsPage({{ downloads_pagination.current_page + 1 }})" 
+                    class="btn btn-secondary btn-sm" 
+                    {% if not downloads_pagination.has_next %}disabled{% endif %}
+                    title="Next page">
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -942,6 +1022,12 @@
           </h3>
         </div>
         <div class="card-body">
+          <!-- Pagination Info -->
+          <div style="margin-bottom: var(--space-md); padding: var(--space-sm); background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 0.75rem; color: var(--text-secondary);">
+            <i class="fas fa-info-circle" style="color: var(--primary); margin-right: var(--space-xs);"></i>
+            Showing {{ users_pagination.start_item }}-{{ users_pagination.end_item }} of {{ users_pagination.total_items }} users
+          </div>
+          
           <!-- Advanced Filters -->
           <div style="margin-bottom: var(--space-lg); padding: var(--space-md); background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border-color); border-radius: var(--border-radius);">
             
@@ -1064,14 +1150,46 @@
                 </tr>
                 {% else %}
                 <tr>
-                  <td colspan="5" style="text-align: center; padding: var(--space-xl); color: var(--error);">
-                    <i class="fas fa-exclamation-triangle"></i> No users data available
+                  <td colspan="5" style="text-align: center; padding: var(--space-xl); color: var(--text-muted);">
+                    <i class="fas fa-inbox"></i> No users data available
                   </td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
+          
+          <!-- Pagination Controls -->
+          {% if users_pagination.total_pages > 1 %}
+          <div style="margin-top: var(--space-lg); display: flex; justify-content: center; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
+            <!-- Previous Button -->
+            <button onclick="navigateUsersPage({{ users_pagination.current_page - 1 }})" 
+                    class="btn btn-secondary btn-sm" 
+                    {% if not users_pagination.has_prev %}disabled{% endif %}
+                    title="Previous page">
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            
+            <!-- Page Numbers -->
+            <div style="display: flex; gap: var(--space-xs); align-items: center;">
+              {% set start_page = [1, users_pagination.current_page - 2] | max %}{% set end_page = [users_pagination.total_pages + 1, users_pagination.current_page + 3] | min %}{% for page in range(start_page, end_page) %}
+                <button onclick="navigateUsersPage({{ page }})" 
+                        class="btn {% if page == users_pagination.current_page %}btn-primary{% else %}btn-secondary{% endif %} btn-sm"
+                        title="Page {{ page }}">
+                  {{ page }}
+                </button>
+              {% endfor %}
+            </div>
+            
+            <!-- Next Button -->
+            <button onclick="navigateUsersPage({{ users_pagination.current_page + 1 }})" 
+                    class="btn btn-secondary btn-sm" 
+                    {% if not users_pagination.has_next %}disabled{% endif %}
+                    title="Next page">
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -1086,28 +1204,72 @@
           </h3>
         </div>
         <div class="card-body">
+          <!-- Pagination Info -->
+          <div style="margin-bottom: var(--space-md); padding: var(--space-sm); background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 0.75rem; color: var(--text-secondary);">
+            <i class="fas fa-info-circle" style="color: var(--primary); margin-right: var(--space-xs);"></i>
+            Showing {{ errors_pagination.start_item }}-{{ errors_pagination.end_item }} of {{ errors_pagination.total_items }} errors
+          </div>
+          
           <div class="table-container">
             <table class="table" id="errorLogsTable">
               <thead>
                 <tr>
-                  <th><i class="fas fa-bug"></i></th>
-                  <th><i class="fas fa-clock"></i></th>
+                  <th style="width: 70%;"><i class="fas fa-bug"></i></th>
+                  <th style="width: 30%;"><i class="fas fa-clock"></i></th>
                 </tr>
               </thead>
               <tbody>
                 {% for e in errors %}
                 <tr>
-                  <td>
+                  <td style="width: 70%;">
                     <div class="error-text" style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
                       {{ e['error'] if 'error' in e.keys() else 'Unknown error' }}
                     </div>
                   </td>
-                  <td class="timestamp" data-ts="{{ e['timestamp']|e }}" style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">{{ e['timestamp'] }}</td>
+                  <td style="width: 30%;" class="timestamp" data-ts="{{ e['timestamp']|e }}" style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">{{ e['timestamp'] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="2" style="text-align: center; padding: var(--space-xl); color: var(--text-muted);">
+                    <i class="fas fa-check-circle"></i> No errors found
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
+          
+          <!-- Pagination Controls -->
+          {% if errors_pagination.total_pages > 1 %}
+          <div style="margin-top: var(--space-lg); display: flex; justify-content: center; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
+            <!-- Previous Button -->
+            <button onclick="navigateErrorsPage({{ errors_pagination.current_page - 1 }})" 
+                    class="btn btn-secondary btn-sm" 
+                    {% if not errors_pagination.has_prev %}disabled{% endif %}
+                    title="Previous page">
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            
+            <!-- Page Numbers -->
+            <div style="display: flex; gap: var(--space-xs); align-items: center;">
+              {% set start_page = [1, errors_pagination.current_page - 2] | max %}{% set end_page = [errors_pagination.total_pages + 1, errors_pagination.current_page + 3] | min %}{% for page in range(start_page, end_page) %}
+                <button onclick="navigateErrorsPage({{ page }})" 
+                        class="btn {% if page == errors_pagination.current_page %}btn-primary{% else %}btn-secondary{% endif %} btn-sm"
+                        title="Page {{ page }}">
+                  {{ page }}
+                </button>
+              {% endfor %}
+            </div>
+            
+            <!-- Next Button -->
+            <button onclick="navigateErrorsPage({{ errors_pagination.current_page + 1 }})" 
+                    class="btn btn-secondary btn-sm" 
+                    {% if not errors_pagination.has_next %}disabled{% endif %}
+                    title="Next page">
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -1946,6 +2108,428 @@
     
     // Auto-refresh disabled - remove seconds from timestamps and add error reference numbers
     // setInterval(refreshData, 30000);
+    
+    // AJAX Pagination Functions
+    function navigateDownloadsPage(page) {
+      // Show loading state
+      showTableLoading('recentDownloadsTable');
+      
+      // Fetch data via AJAX
+      fetch(`/api/downloads?page=${page}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Update table content
+            updateDownloadsTable(data.data);
+            
+            // Update pagination controls
+            updatePaginationControls('downloads', data.pagination);
+            
+            // Update URL without page reload
+            const url = new URL(window.location);
+            url.searchParams.set('downloads_page', page);
+            window.history.pushState({}, '', url);
+          } else {
+            console.error('Error loading downloads:', data);
+            showErrorAlert('Failed to load downloads data');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showErrorAlert('Failed to load downloads data');
+          hideTableLoading('recentDownloadsTable');
+        });
+    }
+    
+    function navigateUsersPage(page) {
+      // Show loading state
+      showTableLoading('usersTable');
+      
+      // Get current sorting parameters
+      const sortBy = getCurrentSortBy();
+      const sortOrder = document.getElementById('descBtn').classList.contains('active') ? 'DESC' : 'ASC';
+      
+      // Fetch data via AJAX
+      fetch(`/api/users?page=${page}&sort_by=${sortBy}&sort_order=${sortOrder}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Update table content
+            updateUsersTable(data.data);
+            
+            // Update pagination controls
+            updatePaginationControls('users', data.pagination);
+            
+            // Update URL without page reload
+            const url = new URL(window.location);
+            url.searchParams.set('users_page', page);
+            url.searchParams.set('sort_by', sortBy);
+            url.searchParams.set('sort_order', sortOrder);
+            window.history.pushState({}, '', url);
+          } else {
+            console.error('Error loading users:', data);
+            showErrorAlert('Failed to load users data');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showErrorAlert('Failed to load users data');
+          hideTableLoading('usersTable');
+        });
+    }
+    
+    function navigateErrorsPage(page) {
+      // Show loading state
+      showTableLoading('errorLogsTable');
+      
+      // Fetch data via AJAX
+      fetch(`/api/errors?page=${page}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Update table content
+            updateErrorsTable(data.data);
+            
+            // Update pagination controls
+            updatePaginationControls('errors', data.pagination);
+            
+            // Update URL without page reload
+            const url = new URL(window.location);
+            url.searchParams.set('errors_page', page);
+            window.history.pushState({}, '', url);
+          } else {
+            console.error('Error loading errors:', data);
+            showErrorAlert('Failed to load errors data');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showErrorAlert('Failed to load errors data');
+          hideTableLoading('errorLogsTable');
+        });
+    }
+    
+    // Helper Functions for AJAX Pagination
+    
+    function showTableLoading(tableId) {
+      const table = document.getElementById(tableId);
+      const tbody = table.querySelector('tbody');
+      
+      // Store original content
+      tbody.dataset.originalContent = tbody.innerHTML;
+      
+      // Show loading state
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="${tbody.querySelectorAll('th').length || 5}" style="text-align: center; padding: var(--space-xl); color: var(--text-muted);">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: var(--space-md);"></i>
+            <div>Loading data...</div>
+          </td>
+        </tr>
+      `;
+      
+      // Disable pagination buttons
+      const card = table.closest('.card');
+      const paginationButtons = card.querySelectorAll('.btn-secondary, .btn-primary');
+      paginationButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+      });
+    }
+    
+    function hideTableLoading(tableId) {
+      const table = document.getElementById(tableId);
+      const card = table.closest('.card');
+      
+      // Re-enable pagination buttons
+      const paginationButtons = card.querySelectorAll('.btn-secondary, .btn-primary');
+      paginationButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      });
+    }
+    
+    function updateDownloadsTable(data) {
+      const tbody = document.querySelector('#recentDownloadsTable tbody');
+      
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: var(--space-xl); color: var(--text-muted);">
+              <i class="fas fa-inbox"></i> No downloads found
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = data.map(d => `
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                <i class="fas fa-file-alt" style="color: var(--primary);"></i>
+                ${(d.filename || '').replace('.mp4', '').replace('.mp3', '').replace('.avi', '').replace('.mov', '').replace('.mkv', '').replace('.jpg', '').replace('.png', '').replace('.gif', '').replace('.zip', '').replace('.rar', '').replace('.pdf', '') || '-'}
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-success">${d.name || 'web'}</span>
+            </td>
+            <td>${d.source || ''}</td>
+            <td>
+              <a href="${d.url || '#'}" target="_blank" class="btn btn-primary btn-sm" title="Open Link">
+                <i class="fas fa-external-link-alt"></i>
+              </a>
+            </td>
+            <td class="timestamp" data-ts="${d.timestamp || ''}">${d.timestamp || ''}</td>
+          </tr>
+        `).join('');
+      }
+      
+      // Re-format timestamps
+      formatTimestamps();
+      
+      // Hide loading
+      hideTableLoading('recentDownloadsTable');
+    }
+    
+    function updateUsersTable(data) {
+      const tbody = document.getElementById('usersTableBody');
+      
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: var(--space-xl); color: var(--text-muted);">
+              <i class="fas fa-inbox"></i> No users data available
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = data.map(user => `
+          <tr data-chat-id="${user[0]}" data-name="${user[1] || 'Unknown'}" data-username="${user[2] || ''}" data-downloads="${user[3] || 0}" data-last-used="${user[4] || ''}">
+            <td>
+              <span class="badge badge-primary">${user[0]}</span>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                <i class="fas fa-user-circle" style="color: var(--primary);"></i>
+                ${user[1] || 'Unknown'}
+              </div>
+            </td>
+            <td>
+              ${user[2] ? 
+                `<a href="https://t.me/${user[2]}" target="_blank" style="color: #6366f1; text-decoration: none;">
+                  <i class="fab fa-telegram"></i> ${user[2]}
+                </a>` : 
+                '<span class="text-muted">No username</span>'
+              }
+            </td>
+            <td>
+              <span class="badge badge-success">${user[3] || 0}</span>
+            </td>
+            <td>
+              ${user[4] ? 
+                `<span style="font-size: 0.75rem; font-family: monospace; color: var(--text-secondary);" data-ts="${user[4]}">${user[4]}</span>` :
+                '<span class="text-muted" style="font-size: 0.75rem;">Never</span>'
+              }
+            </td>
+          </tr>
+        `).join('');
+      }
+      
+      // Re-format timestamps
+      formatTimestamps();
+      
+      // Hide loading
+      hideTableLoading('usersTable');
+    }
+    
+    function updateErrorsTable(data) {
+      const tbody = document.querySelector('#errorLogsTable tbody');
+      
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="2" style="text-align: center; padding: var(--space-xl); color: var(--text-muted);">
+              <i class="fas fa-check-circle"></i> No errors found
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = data.map(e => `
+          <tr>
+            <td style="width: 70%;">
+              <div class="error-text" style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
+                ${e.error || 'Unknown error'}
+              </div>
+            </td>
+            <td style="width: 30%;" class="timestamp" data-ts="${e.timestamp || ''}" style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">${e.timestamp || ''}</td>
+          </tr>
+        `).join('');
+      }
+      
+      // Re-format timestamps
+      formatTimestamps();
+      
+      // Hide loading
+      hideTableLoading('errorLogsTable');
+    }
+    
+    function updatePaginationControls(tableType, pagination) {
+      // Find the pagination container for this table
+      let paginationContainer;
+      let paginationInfo;
+      
+      if (tableType === 'downloads') {
+        const card = document.querySelector('#recentDownloadsTable').closest('.card');
+        paginationContainer = card.querySelector('.card-body > div:last-child');
+        paginationInfo = card.querySelector('.card-body > div:first-child');
+      } else if (tableType === 'users') {
+        const card = document.querySelector('#usersTable').closest('.card');
+        paginationContainer = card.querySelector('.card-body > div:last-child');
+        paginationInfo = card.querySelector('.card-body > div:first-child');
+      } else if (tableType === 'errors') {
+        const card = document.querySelector('#errorLogsTable').closest('.card');
+        paginationContainer = card.querySelector('.card-body > div:last-child');
+        paginationInfo = card.querySelector('.card-body > div:first-child');
+      }
+      
+      // Update pagination info
+      if (paginationInfo) {
+        const tableTypeText = tableType.charAt(0).toUpperCase() + tableType.slice(1);
+        paginationInfo.innerHTML = `
+          <i class="fas fa-info-circle" style="color: var(--primary); margin-right: var(--space-xs);"></i>
+          Showing ${pagination.start_item}-${pagination.end_item} of ${pagination.total_items} ${tableType}
+        `;
+      }
+      
+      // Update pagination controls if there are multiple pages
+      if (paginationContainer && pagination.total_pages > 1) {
+        const navigateFunction = `navigate${tableType.charAt(0).toUpperCase() + tableType.slice(1)}Page`;
+        
+        // Generate page numbers
+        const startPage = Math.max(1, pagination.current_page - 2);
+        const endPage = Math.min(pagination.total_pages + 1, pagination.current_page + 3);
+        let pageButtons = '';
+        
+        for (let page = startPage; page < endPage; page++) {
+          const isActive = page === pagination.current_page;
+          const buttonClass = isActive ? 'btn-primary' : 'btn-secondary';
+          pageButtons += `
+            <button onclick="${navigateFunction}(${page})" 
+                    class="btn ${buttonClass} btn-sm"
+                    title="Page ${page}">
+              ${page}
+            </button>
+          `;
+        }
+        
+        paginationContainer.innerHTML = `
+          <div style="margin-top: var(--space-lg); display: flex; justify-content: center; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
+            <!-- Previous Button -->
+            <button onclick="${navigateFunction}(${pagination.current_page - 1})" 
+                    class="btn btn-secondary btn-sm" 
+                    ${!pagination.has_prev ? 'disabled' : ''}
+                    title="Previous page">
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            
+            <!-- Page Numbers -->
+            <div style="display: flex; gap: var(--space-xs); align-items: center;">
+              ${pageButtons}
+            </div>
+            
+            <!-- Next Button -->
+            <button onclick="${navigateFunction}(${pagination.current_page + 1})" 
+                    class="btn btn-secondary btn-sm" 
+                    ${!pagination.has_next ? 'disabled' : ''}
+                    title="Next page">
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        `;
+      }
+    }
+    
+    function showErrorAlert(message) {
+      // Create and show error alert
+      const alert = document.createElement('div');
+      alert.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--error);
+        color: white;
+        padding: var(--space-md) var(--space-lg);
+        border-radius: var(--border-radius);
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        box-shadow: var(--shadow-xl);
+      `;
+      alert.textContent = message;
+      
+      document.body.appendChild(alert);
+      
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        alert.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => alert.remove(), 300);
+      }, 3000);
+    }
+    
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', function(event) {
+      const url = new URL(window.location);
+      
+      // Reload data based on current URL parameters
+      const downloadsPage = parseInt(url.searchParams.get('downloads_page') || '1');
+      const usersPage = parseInt(url.searchParams.get('users_page') || '1');
+      const errorsPage = parseInt(url.searchParams.get('errors_page') || '1');
+      
+      const sortBy = url.searchParams.get('sort_by') || 'downloads_count';
+      const sortOrder = url.searchParams.get('sort_order') || 'DESC';
+      
+      // Update all tables without adding to history
+      loadDownloadsPageSilently(downloadsPage);
+      loadUsersPageSilently(usersPage, sortBy, sortOrder);
+      loadErrorsPageSilently(errorsPage);
+    });
+    
+    // Silent loading functions (for history navigation)
+    function loadDownloadsPageSilently(page) {
+      fetch(`/api/downloads?page=${page}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            updateDownloadsTable(data.data);
+            updatePaginationControls('downloads', data.pagination);
+          }
+        })
+        .catch(error => console.error('Error loading downloads:', error));
+    }
+    
+    function loadUsersPageSilently(page, sortBy, sortOrder) {
+      fetch(`/api/users?page=${page}&sort_by=${sortBy}&sort_order=${sortOrder}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            updateUsersTable(data.data);
+            updatePaginationControls('users', data.pagination);
+          }
+        })
+        .catch(error => console.error('Error loading users:', error));
+    }
+    
+    function loadErrorsPageSilently(page) {
+      fetch(`/api/errors?page=${page}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            updateErrorsTable(data.data);
+            updatePaginationControls('errors', data.pagination);
+          }
+        })
+        .catch(error => console.error('Error loading errors:', error));
+    }
   </script>
 </body>
 </html>
