@@ -12,6 +12,9 @@ from telegram.error import TimedOut, Conflict
 from yt_dlp import YoutubeDL, DownloadError
 from dotenv import load_dotenv
 
+# Import configuration
+from config import settings
+
 # Import blocking system
 from blocks import is_user_blocked, BLOCK_MESSAGE, log_blocked_attempt
 from admin_commands import get_admin_handlers
@@ -60,39 +63,29 @@ def get_ydl_opts(base_opts, is_shorts=False, is_tiktok=False):
             # Additional headers for shorts
             'http_headers': {
                 **opts.get('http_headers', {}),
-                'Referer': 'https://www.youtube.com/shorts/',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Referer': settings.telegram.youtube_referer,
+                'Accept': settings.telegram.accept_header,
             }
         })
     
     return opts
 
-# ================== ENV / SETUP ==================
+# ================== CONFIG / SETUP ==================
 load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))
-LOG_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "0")) or CHANNEL_ID
-CAPTION = os.getenv("CAPTION", "")
-DB_PATH = os.path.abspath(os.getenv("DATABASE", "cooldl.db"))
-COOKIES_FILE = os.getenv("COOKIES_FILE", "").strip()
 
-# NEW: Rate limiting & resource management
-MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 500)) * 1024 * 1024  # Default 500MB
-DOWNLOAD_TIMEOUT = int(os.getenv("DOWNLOAD_TIMEOUT", 300))  # 5 min default
-MAX_CONCURRENT = int(os.getenv("MAX_CONCURRENT", 3))
-MAX_DOWNLOADS_PER_HOUR = int(os.getenv("MAX_DOWNLOADS_PER_HOUR", 10))
-FILE_RETENTION_DAYS = int(os.getenv("FILE_RETENTION_DAYS", 7))
+# Use configuration system
+DB_PATH = settings.database.absolute_path
+COOKIES_FILE = settings.download.cookies_file.strip()
+DOWNLOAD_DIR = settings.download.download_dir_path
 
-DOWNLOAD_DIR = Path("downloads")
-DOWNLOAD_DIR.mkdir(exist_ok=True, parents=True)
-
-logging.basicConfig(level=logging.INFO)
+# Configure logging
+logging.basicConfig(level=getattr(logging, settings.log_level))
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 URL_RE = re.compile(r'https?://[^\s<>")]+', re.I)
 
-# NEW: Rate limiting tracker
-download_semaphore = asyncio.Semaphore(MAX_CONCURRENT)
+# Rate limiting tracker
+download_semaphore = asyncio.Semaphore(settings.rate_limit.max_concurrent)
 user_download_tracker = defaultdict(list)  # chat_id -> [timestamps]
 
 # ================== URL NORMALIZATION ==================
@@ -176,8 +169,8 @@ def get_source(url):
     if "youtube" in u or "youtu.be" in u: return "YouTube"
     return "Unknown"
 
-def rand_id(k=5): return ''.join(random.choices(string.digits, k=k))
-def now_local(): return datetime.datetime.now(pytz.timezone('Asia/Riyadh')).strftime('%Y/%m/%d, %I:%M %p')
+def rand_id(): return ''.join(random.choices(string.digits, k=settings.random_id_length))
+def now_local(): return datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
 def now_utc_iso(): return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 # NEW: Check rate limit
@@ -189,8 +182,8 @@ def check_rate_limit(chat_id: int) -> tuple[bool, str]:
     # Clean old entries
     user_download_tracker[chat_id] = [ts for ts in user_download_tracker[chat_id] if ts > hour_ago]
     
-    if len(user_download_tracker[chat_id]) >= MAX_DOWNLOADS_PER_HOUR:
-        return False, f"⏱️ Rate limit: max {MAX_DOWNLOADS_PER_HOUR} downloads/hour. Try again later."
+    if len(user_download_tracker[chat_id]) >= settings.rate_limit.max_downloads_per_hour:
+        return False, f"⏱️ Rate limit: max {settings.rate_limit.max_downloads_per_hour} downloads/hour. Try again later."
     
     return True, ""
 
@@ -212,11 +205,11 @@ def record_download(chat_id: int):
 
 # ================== DB ==================
 def conn():
-    c = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=20)
+    c = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=settings.database.connection_timeout)
     c.row_factory = sqlite3.Row
     try:
-        c.execute("PRAGMA journal_mode=WAL;")
-        c.execute("PRAGMA busy_timeout=20000;")
+        c.execute(f"PRAGMA journal_mode={settings.database.journal_mode};")
+        c.execute(f"PRAGMA busy_timeout={settings.database.busy_timeout};")
     except Exception:
         pass
     return c
@@ -362,9 +355,9 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
     file_extension = final_path.suffix.lower()
     file_size = final_path.stat().st_size
 
-    # NEW: Validate file size before sending
-    if file_size > MAX_FILE_SIZE:
-        logger.error(f"File too large: {human_size(file_size)} > {human_size(MAX_FILE_SIZE)}")
+    # Validate file size before sending
+    if file_size > settings.rate_limit.max_file_size_bytes:
+        logger.error(f"File too large: {human_size(file_size)} > {human_size(settings.rate_limit.max_file_size_bytes)}")
         return False
 
     # Create inline keyboard button
@@ -373,7 +366,7 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     async def _send_video(to_chat, include_caption=True):
-        caption = CAPTION if include_caption and CAPTION else ""
+        caption = settings.bot.caption if include_caption and settings.bot.caption else ""
         return await send_with_retry(lambda: context.bot.send_video(
             chat_id=to_chat, video=final_path.open("rb"),
             caption=caption,
@@ -382,7 +375,7 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
         ))
 
     async def _send_document(to_chat, include_caption=True):
-        caption = CAPTION if include_caption and CAPTION else ""
+        caption = settings.bot.caption if include_caption and settings.bot.caption else ""
         return await send_with_retry(lambda: context.bot.send_document(
             chat_id=to_chat, document=final_path.open("rb"),
             caption=caption,
@@ -401,21 +394,21 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
         except Exception:
             sent_to_user = await _send_document(chat_id, include_caption=False)
     
-    # Send to LOG_CHANNEL_ID (with metadata caption if CAPTION is set)
-    if LOG_CHANNEL_ID:
+    # Send to log channel (with metadata caption if caption is set)
+    if settings.bot.log_channel_id:
         try:
             if file_extension in ['.mp4', '.mov', '.webm']:
-                sent_to_log = await _send_video(LOG_CHANNEL_ID, include_caption=True)
+                sent_to_log = await _send_video(settings.bot.log_channel_id, include_caption=True)
             else:
-                sent_to_log = await _send_document(LOG_CHANNEL_ID, include_caption=True)
+                sent_to_log = await _send_document(settings.bot.log_channel_id, include_caption=True)
         except Exception as e:
             logging.warning(f"send to log channel failed: {e}")
     
-    # Also copy to regular CHANNEL_ID if set (for backward compatibility)
-    if CHANNEL_ID and CHANNEL_ID != LOG_CHANNEL_ID and sent_to_user:
+    # Also copy to regular channel if set (for backward compatibility)
+    if settings.bot.channel_id and settings.bot.channel_id != settings.bot.log_channel_id and sent_to_user:
         try:
             await context.bot.copy_message(
-                chat_id=CHANNEL_ID,
+                chat_id=settings.bot.channel_id,
                 from_chat_id=chat_id,
                 message_id=sent_to_user.message_id
             )
@@ -438,8 +431,8 @@ async def help_command(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 • Tumblr
 
 ⚙️ Limits:
-• Max {MAX_DOWNLOADS_PER_HOUR} downloads/hour
-• Max file size: {human_size(MAX_FILE_SIZE)}
+• Max {settings.rate_limit.max_downloads_per_hour} downloads/hour
+• Max file size: {human_size(settings.rate_limit.max_file_size_bytes)}
 
 
 🔗 Send a URL to download!
@@ -472,10 +465,10 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     # === Cache ===
     cached = find_cached_file(cache_key)
     if cached:
-        if LOG_CHANNEL_ID:
+        if settings.bot.log_channel_id:
             try:
                 await context.bot.send_message(
-                    chat_id=LOG_CHANNEL_ID,
+                    chat_id=settings.bot.log_channel_id,
                     text=build_meta_text(user.id, name, username, source, norm_url, cached),
                     disable_web_page_preview=True
                 )
@@ -512,10 +505,10 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
             'noplaylist': True,
             'quiet': True,
             'logger': caplog,
-            'retries': 5,
-            'concurrent_fragment_downloads': 4,
-            'socket_timeout': 30,
-            'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            'retries': settings.download.retries,
+            'concurrent_fragment_downloads': settings.download.concurrent_fragments,
+            'socket_timeout': settings.download.socket_timeout,
+            'http_headers': {'User-Agent': settings.telegram.user_agent}
         }
         
         # Apply platform-specific optimizations
@@ -524,12 +517,12 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
         # Add TikTok impersonation for age-restricted content
         if is_tiktok:
             ydl_opts['extractor_args'] = {'tiktok': ['impersonate=webkit']}
-            ydl_opts['http_headers']['Referer'] = 'https://www.tiktok.com/'
+            ydl_opts['http_headers']['Referer'] = settings.telegram.tiktok_referer
         
         if COOKIES_FILE and os.path.exists(COOKIES_FILE):
             ydl_opts['cookiefile'] = COOKIES_FILE
 
-        async def do_download(url_to_use: str, timeout: int = DOWNLOAD_TIMEOUT) -> Path:
+        async def do_download(url_to_use: str, timeout: int = settings.download.timeout_seconds) -> Path:
             loop = asyncio.get_running_loop()
             def run():
                 with YoutubeDL(ydl_opts) as ydl:
@@ -564,7 +557,7 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
             try: await context.bot.send_message(chat_id=chat_id, text="❌ Download failed. Try another URL.")
             except Exception: pass
             try:
-                await context.bot.send_message(chat_id=LOG_CHANNEL_ID, text=f"❌ Error\n{name} ({username})\nID:{file_id}\nURL:{norm_url}\n\n{short_err}")
+                await context.bot.send_message(chat_id=settings.bot.log_channel_id, text=f"❌ Error\n{name} ({username})\nID:{file_id}\nURL:{norm_url}\n\n{short_err}")
             except Exception: pass
             log_to_db("errors", (short_err, file_id, now_local(), username, chat_id, name, norm_url))
             log_to_db("logs", (now_local(), "DownloadFailed", username, chat_id, "Fail"))
@@ -578,10 +571,10 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
         except Exception as e:
             logging.warning(f"delete progress msg failed: {e}")
 
-        if LOG_CHANNEL_ID:
+        if settings.bot.log_channel_id:
             try:
                 await context.bot.send_message(
-                    chat_id=LOG_CHANNEL_ID,
+                    chat_id=settings.bot.log_channel_id,
                     text=build_meta_text(user.id, name, username, source, norm_url, final_path),
                     disable_web_page_preview=True
                 )
@@ -639,15 +632,15 @@ if __name__ == '__main__':
     ensure_tables()
     # cleanup_old_files() # Disabled - keeping files longer
     
-    if not BOT_TOKEN:
+    if not settings.bot.token:
         raise SystemExit("❌ BOT_TOKEN env var required")
     
-    logger.info(f"Config: MAX_CONCURRENT={MAX_CONCURRENT}, TIMEOUT={DOWNLOAD_TIMEOUT}s, MAX_FILE_SIZE={human_size(MAX_FILE_SIZE)}")
+    logger.info(f"Config: MAX_CONCURRENT={settings.rate_limit.max_concurrent}, TIMEOUT={settings.download.timeout_seconds}s, MAX_FILE_SIZE={human_size(settings.rate_limit.max_file_size_bytes)}")
     
-    req = HTTPXRequest(connect_timeout=20, read_timeout=180)
+    req = HTTPXRequest(connect_timeout=settings.telegram.request_connect_timeout, read_timeout=settings.telegram.request_read_timeout)
     
     # Use unique bot instance to avoid conflicts
-    app = ApplicationBuilder().token(BOT_TOKEN).request(req).build()
+    app = ApplicationBuilder().token(settings.bot.token).request(req).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     
@@ -661,7 +654,7 @@ if __name__ == '__main__':
     import time
     from telegram.error import Conflict
     
-    max_retries = 3
+    max_retries = settings.telegram.polling_max_retries
     for attempt in range(max_retries):
         try:
             logger.info(f"Starting polling (attempt {attempt + 1}/{max_retries})...")
@@ -670,7 +663,7 @@ if __name__ == '__main__':
         except Conflict as e:
             logger.warning(f"Conflict detected: {e}")
             if attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 30  # 30s, 60s, 90s
+                wait_time = (attempt + 1) * settings.telegram.polling_conflict_wait_base  # 30s, 60s, 90s, etc.
                 logger.info(f"Waiting {wait_time}s before retry...")
                 time.sleep(wait_time)
             else:

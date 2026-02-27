@@ -9,6 +9,9 @@ import os
 import httpx
 from pathlib import Path
 
+# Import configuration
+from config import settings
+
 # Import blocks routers
 from web_blocks_simple import router as blocks_router
 
@@ -17,7 +20,7 @@ for d in ("downloads", "static", "templates"):
     Path(d).mkdir(parents=True, exist_ok=True)
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "secret-fahad-strong-key"))
+app.add_middleware(SessionMiddleware, secret_key=settings.web.session_secret)
 
 # Include blocks routers
 app.include_router(blocks_router)
@@ -64,7 +67,7 @@ async def login_form(request: Request):
 
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    if username == "Fahad" and password == "213325@Fx9":
+    if username == settings.web.admin_username and password == settings.web.admin_password:
         request.session["auth"] = True
         return RedirectResponse("/dashboard", status_code=302)
     return templates.TemplateResponse("login.html", {"request": request, "error": "البيانات غير صحيحة"})
@@ -80,7 +83,7 @@ async def dashboard(request: Request):
         return RedirectResponse("/login", status_code=302)
 
     # Pagination settings
-    ITEMS_PER_PAGE = 50
+    ITEMS_PER_PAGE = settings.web.items_per_page
     
     # Get page parameters for each table
     downloads_page = int(request.query_params.get('downloads_page', 1))
@@ -252,7 +255,7 @@ async def api_downloads(request: Request, page: int = 1):
     if not request.session.get("auth"):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    ITEMS_PER_PAGE = 50
+    ITEMS_PER_PAGE = settings.web.items_per_page
     offset = (page - 1) * ITEMS_PER_PAGE
     
     conn = get_connection()
@@ -305,7 +308,7 @@ async def api_users(request: Request, page: int = 1, sort_by: str = "downloads_c
     if not request.session.get("auth"):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    ITEMS_PER_PAGE = 50
+    ITEMS_PER_PAGE = settings.web.items_per_page
     offset = (page - 1) * ITEMS_PER_PAGE
     
     # Validate parameters
@@ -370,7 +373,7 @@ async def api_errors(request: Request, page: int = 1):
     if not request.session.get("auth"):
         raise HTTPException(status_code=401, detail="Unauthorized")
     
-    ITEMS_PER_PAGE = 50
+    ITEMS_PER_PAGE = settings.web.items_per_page
     offset = (page - 1) * ITEMS_PER_PAGE
     
     conn = get_connection()
@@ -421,14 +424,12 @@ async def api_errors(request: Request, page: int = 1):
 async def restart_bot():
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get("http://localhost:7070/restart")
-            TELEGRAM_TOKEN = os.getenv("BOT_TOKEN")
-            CHAT_ID = os.getenv("LOG_CHANNEL_ID") or os.getenv("CHANNEL_ID")
+            response = await client.get(settings.web.restart_endpoint)
             message = "✅ CoolDL Bot has been restarted successfully."
-            if TELEGRAM_TOKEN and CHAT_ID:
+            if settings.bot.token and settings.bot.log_channel_id:
                 await client.post(
-                    f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
-                    data={"chat_id": CHAT_ID, "text": message}
+                    f"https://api.telegram.org/bot{settings.bot.token}/sendMessage",
+                    data={"chat_id": settings.bot.log_channel_id, "text": message}
                 )
         return JSONResponse({"success": True, "message": response.text})
     except Exception as e:
