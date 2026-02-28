@@ -421,6 +421,10 @@ async def deliver_file(final_path: Path, source: str, chat_id: int, context: Con
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📥 Send me a video link to download. Supported: TikTok, Instagram, X")
 
+async def status_command(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = f"🟢: Bot is up and running"
+    await update.message.reply_text(msg)
+
 async def help_command(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = f"""
 📋 Supported platforms:
@@ -643,6 +647,7 @@ if __name__ == '__main__':
     app = ApplicationBuilder().token(settings.bot.token).request(req).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("status", status_command))
     
     # Add admin commands
     admin_handlers = get_admin_handlers()
