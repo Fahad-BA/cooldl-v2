@@ -1,4 +1,6 @@
 #!/bin/bash
+# Change to script directory to ensure relative paths work
+cd "$(dirname "$0")"
 echo "🔄 Restarting CoolDL services..."
 echo "🔐 Sudo password: 213325"
 
