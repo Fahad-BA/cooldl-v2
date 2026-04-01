@@ -5,8 +5,8 @@ from typing import Optional, Dict, List, Any
 
 from models import get_connection
 
-# Block message in both English and Arabic
-BLOCK_MESSAGE = "You've been blocked from using this bot — أنت محظور من استخدام البوت"
+# Block message in English
+BLOCK_MESSAGE = "You've been banned from using this bot."
 
 def is_user_blocked(chat_id: int) -> bool:
     """Check if a user is blocked by chat_id."""
