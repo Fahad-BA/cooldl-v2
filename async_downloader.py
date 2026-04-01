@@ -16,7 +16,10 @@ from dotenv import load_dotenv
 from config import settings
 
 # Import blocking system
-from blocks import is_user_blocked, BLOCK_MESSAGE, log_blocked_attempt
+from blocks import is_user_blocked, log_blocked_attempt
+
+# Block message in English
+BLOCK_MESSAGE = "You've been banned from using this bot."
 from admin_commands import get_admin_handlers
 
 
