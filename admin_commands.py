@@ -9,8 +9,7 @@ from blocks import (
     unblock_user, 
     get_blocked_users, 
     check_user_block_status,
-    is_user_blocked,
-    BLOCK_MESSAGE
+    is_user_blocked
 )
 
 async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
