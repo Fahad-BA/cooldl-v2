@@ -1,4 +1,4 @@
-from models import get_all_downloads, get_errors, get_top_sources, get_connection, get_questions, get_questions_with_answers, get_answers_for_question, create_question, create_answer
+from models import get_all_downloads, get_errors, get_top_sources, get_connection
 from fastapi import FastAPI, Form, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -12,18 +12,12 @@ from pathlib import Path
 # Import configuration
 from config import settings
 
-# Import blocks routers
-from web_blocks_simple import router as blocks_router
-
 # تأكد أن المجلدات موجودة
 for d in ("downloads", "static", "templates"):
     Path(d).mkdir(parents=True, exist_ok=True)
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=settings.web.session_secret)
-
-# Include blocks routers
-app.include_router(blocks_router)
 
 templates = Jinja2Templates(directory="templates")
 # لا تفحص وجود المجلدات عند التشغيل
@@ -133,7 +127,7 @@ async def dashboard(request: Request):
         
         # Get paginated errors data
         cur.execute("""
-            SELECT error, timestamp 
+            SELECT file_id, timestamp, username, chat_id, name, url, error 
             FROM errors 
             ORDER BY timestamp DESC 
             LIMIT ? OFFSET ?
@@ -141,7 +135,7 @@ async def dashboard(request: Request):
         errors = cur.fetchall()
         # Convert to dict format for template compatibility
         errors = [
-            {'error': row[0], 'timestamp': row[1]}
+            {'file_id': row[0], 'timestamp': row[1], 'username': row[2], 'chat_id': row[3], 'name': row[4], 'url': row[5], 'error': row[6]}
             for row in errors
         ]
         
@@ -383,9 +377,9 @@ async def api_errors(request: Request, page: int = 1):
         cur.execute("SELECT COUNT(*) FROM errors")
         total_items = cur.fetchone()[0]
         
-        # Get paginated data
+        # Get paginated data with all error details
         cur.execute("""
-            SELECT error, timestamp 
+            SELECT file_id, timestamp, username, chat_id, name, url, error 
             FROM errors 
             ORDER BY timestamp DESC 
             LIMIT ? OFFSET ?
@@ -394,7 +388,7 @@ async def api_errors(request: Request, page: int = 1):
         
         # Convert to dict format
         data = [
-            {'error': row[0], 'timestamp': row[1]}
+            {'file_id': row[0], 'timestamp': row[1], 'username': row[2], 'chat_id': row[3], 'name': row[4], 'url': row[5], 'error': row[6]}
             for row in errors
         ]
         
@@ -434,4 +428,3 @@ async def restart_bot():
         return JSONResponse({"success": True, "message": response.text})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

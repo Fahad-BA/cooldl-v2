@@ -196,6 +196,7 @@ test_*.py
 
 # Unused files folder
 unused/
+unused_code/
 async_downloader.py.backup_token_fix
 .gitignore
 web_pid.txt
