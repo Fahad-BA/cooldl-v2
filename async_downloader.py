@@ -218,7 +218,7 @@ class CaptureLogger:
 # ================== DELIVERY ==================
 async def deliver_file(conn, final_path: Path, source: str, chat_id: int, 
                       user_id: int, name: str, username: str, url: str,
-                      context: ContextTypes.DEFAULT_TYPE, is_cache: bool) -> bool:
+                      context: ContextTypes.DEFAULT_TYPE, is_from_cache: bool) -> bool:
     """Deliver file to user and log channels.
     
     Args:
@@ -288,7 +288,7 @@ async def deliver_file(conn, final_path: Path, source: str, chat_id: int,
             sz = human_size(file_size)
             now_local = datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
             meta_text = (f"ID: {user_id}\nUser: {name} ({username})\nSource: {source}\n"
-                        f"File: {final_path.name} ({sz})\nTime: {now_local}\nURL: {url}\n{'(CACHE)' if is_cache else '(FRESH)'}")
+                        f"File: {final_path.name} ({sz})\nTime: {now_local}\nURL: {url}\n(FRESH DOWNLOAD)")
             await context.bot.send_message(
                 chat_id=settings.bot.log_channel_id,
                 text=meta_text,
@@ -318,32 +318,6 @@ async def deliver_file(conn, final_path: Path, source: str, chat_id: int,
     return sent_to_user is not None
 
 # ================== DOWNLOAD HANDLING ==================
-async def download_cached(conn, cached: Path, source: str, chat_id: int,
-                         user_id: int, name: str, username: str, norm_url: str, raw_url: str,
-                         file_id: str, context: ContextTypes.DEFAULT_TYPE):
-    """Handle cached file delivery."""
-    ok = await deliver_file(conn, cached, source, chat_id, user_id, name, username, norm_url, context, is_cache=True)
-    if not ok:
-        try:
-            await context.bot.send_message(chat_id=chat_id, text="⚠️ Sending failed.")
-        except Exception:
-            pass
-    record_download(chat_id)
-    # Record download to database
-    try:
-        file_size = (DOWNLOAD_DIR / cached.name).stat().st_size if (DOWNLOAD_DIR / cached.name).exists() else 0
-    except:
-        file_size = 0
-    db.log_to_db(conn, "downloads", (user_id, norm_url, cached.name, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
-                                     chat_id, name, username, file_size, file_size, None))
-    if raw_url != norm_url:
-        try:
-            file_size = (DOWNLOAD_DIR / cached.name).stat().st_size if (DOWNLOAD_DIR / cached.name).exists() else 0
-        except:
-            file_size = 0
-        db.log_to_db(conn, "downloads", (user_id, raw_url, cached.name, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
-                                     chat_id, name, username, file_size, file_size, None))
-
 async def download_fresh(conn, norm_url: str, raw_url: str, source: str, chat_id: int,
                         user_id: int, name: str, username: str, file_id: str,
                         is_tiktok: bool, is_shorts: bool, context: ContextTypes.DEFAULT_TYPE,
@@ -642,15 +616,8 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
 
     db.log_to_db(conn, "users", (chat_id, name, username, datetime.datetime.now(datetime.timezone.utc).isoformat()))
 
-    # Check cache
-    cached = db.find_cached_file(conn, norm_url)
-    if cached:
-        await download_cached(conn, cached, source, chat_id, user.id, name, username, norm_url, raw_url, file_id, context)
-        # Record in queue manager
-        queue_manager.record_download_start(chat_id)
-        queue_manager.record_download_complete(chat_id, success=True, size_mb=cached.stat().st_size / (1024*1024) if cached.exists() else 0)
-        conn.close()
-        return
+    # Removed caching methodology - always download fresh files
+    # This prevents database/filesystem mismatches and ensures latest content
 
     # Fresh download
     async with download_semaphore:
