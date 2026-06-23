@@ -515,10 +515,38 @@ async def download_fresh_enhanced(conn, norm_url: str, raw_url: str, source: str
         if not final_path:
             # All attempts failed
             logger.error(f"All download attempts failed for: {norm_url}")
+            # Log failure to log channel
+            if settings.bot.log_channel_id:
+                try:
+                    now_local = datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
+                    failure_text = (f"ID: {user_id}\nUser: {name} ({username})\nSource: {source}\n"
+                                   f"URL: {raw_url}\nTime: {now_local}\nStatus: ❌ DOWNLOAD FAILED\n"
+                                   f"Reason: All download attempts failed")
+                    await context.bot.send_message(
+                        chat_id=settings.bot.log_channel_id,
+                        text=failure_text,
+                        disable_web_page_preview=True
+                    )
+                except Exception as log_e:
+                    logging.warning(f"send failure to log channel failed: {log_e}")
             return False
             
     except Exception as e:
         logger.error(f"Unexpected error in download: {e}")
+        # Log exception to log channel
+        if settings.bot.log_channel_id:
+            try:
+                now_local = datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
+                failure_text = (f"ID: {user_id}\nUser: {name} ({username})\nSource: {source}\n"
+                               f"URL: {raw_url}\nTime: {now_local}\nStatus: ❌ DOWNLOAD FAILED\n"
+                               f"Reason: Exception - {str(e)}")
+                await context.bot.send_message(
+                    chat_id=settings.bot.log_channel_id,
+                    text=failure_text,
+                    disable_web_page_preview=True
+                )
+            except Exception as log_e:
+                logging.warning(f"send exception to log channel failed: {log_e}")
         return False
 
     # Delete progress message
@@ -528,8 +556,24 @@ async def download_fresh_enhanced(conn, norm_url: str, raw_url: str, source: str
         logging.warning(f"delete progress msg failed: {e}")
 
     # Deliver file
-    ok = await deliver_file(conn, final_path, source, chat_id, user_id, name, username, norm_url, context, is_cache=False)
+    ok = await deliver_file(conn, final_path, source, chat_id, user_id, name, username, norm_url, context, is_from_cache=False)
     if not ok:
+        # Log delivery failure to log channel
+        if settings.bot.log_channel_id:
+            try:
+                sz = human_size(final_path.stat().st_size) if final_path.exists() else "Unknown"
+                now_local = datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
+                failure_text = (f"ID: {user_id}\nUser: {name} ({username})\nSource: {source}\n"
+                               f"File: {final_path.name} ({sz})\nURL: {raw_url}\nTime: {now_local}\nStatus: ❌ DELIVERY FAILED\n"
+                               f"Reason: File sending to user failed")
+                await context.bot.send_message(
+                    chat_id=settings.bot.log_channel_id,
+                    text=failure_text,
+                    disable_web_page_preview=True
+                )
+            except Exception as log_e:
+                logging.warning(f"send delivery failure to log channel failed: {log_e}")
+        
         try:
             await context.bot.send_message(chat_id=chat_id, text="⚠️ Sending failed.")
         except Exception:
@@ -574,6 +618,20 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     # === Phase 2: Intelligent URL Validation ===
     should_proceed, validation_msg, url_analysis = await pre_download_check(raw_url)
     if not should_proceed:
+        # Log validation failure to log channel
+        if settings.bot.log_channel_id:
+            try:
+                now_local = datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
+                failure_text = (f"ID: {user_id}\nUser: {name} ({username})\nURL: {raw_url}\nTime: {now_local}\nStatus: ❌ VALIDATION FAILED\n"
+                               f"Reason: {validation_msg}")
+                await context.bot.send_message(
+                    chat_id=settings.bot.log_channel_id,
+                    text=failure_text,
+                    disable_web_page_preview=True
+                )
+            except Exception as log_e:
+                logging.warning(f"send validation failure to log channel failed: {log_e}")
+        
         await update.message.reply_text(f"❌ {validation_msg}")
         conn.close()
         return
@@ -590,6 +648,20 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     # Security check
     is_allowed, security_reason = await security_check_before_download(chat_id, raw_url)
     if not is_allowed:
+        # Log security failure to log channel
+        if settings.bot.log_channel_id:
+            try:
+                now_local = datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
+                failure_text = (f"ID: {user_id}\nUser: {name} ({username})\nURL: {raw_url}\nTime: {now_local}\nStatus: 🚫 SECURITY BLOCKED\n"
+                               f"Reason: {security_reason}")
+                await context.bot.send_message(
+                    chat_id=settings.bot.log_channel_id,
+                    text=failure_text,
+                    disable_web_page_preview=True
+                )
+            except Exception as log_e:
+                logging.warning(f"send security failure to log channel failed: {log_e}")
+        
         await update.message.reply_text(f"🚫 {security_reason}")
         conn.close()
         return
@@ -597,6 +669,20 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     # === Phase 2: Smart Rate Limiting ===
     rate_allowed, rate_msg, rate_details = get_rate_limit_info(chat_id)
     if not rate_allowed:
+        # Log rate limit failure to log channel
+        if settings.bot.log_channel_id:
+            try:
+                now_local = datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
+                failure_text = (f"ID: {user_id}\nUser: {name} ({username})\nURL: {raw_url}\nTime: {now_local}\nStatus: ⏰ RATE LIMITED\n"
+                               f"Reason: {rate_msg}\nDetails: {rate_details}")
+                await context.bot.send_message(
+                    chat_id=settings.bot.log_channel_id,
+                    text=failure_text,
+                    disable_web_page_preview=True
+                )
+            except Exception as log_e:
+                logging.warning(f"send rate limit failure to log channel failed: {log_e}")
+        
         await update.message.reply_text(rate_msg)
         conn.close()
         return
