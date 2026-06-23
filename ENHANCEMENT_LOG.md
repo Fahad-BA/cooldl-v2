@@ -186,3 +186,170 @@ tail -f logs/error_recovery.log
 ---
 
 *Enhancement Phase 1 completed on 2026-06-23*
+
+---
+
+# 🚀 CoolDL Enhancement Log - Phase 2 Complete
+
+## ✅ **Completed Enhancements (Phase 2)**
+
+### **1. Intelligent URL Validation & Pre-processing** ✅
+**File**: `url_validator.py`
+
+**Features**:
+- **Smart URL Analysis**: Comprehensive URL analysis before download attempt
+- **Content Type Prediction**: Identifies video, short_video, live_stream, playlist, audio, image
+- **File Size Estimation**: Pre-download size estimates based on platform & content type averages
+- **Platform-Specific Optimization Hints**: Tailored download strategies per platform
+- **Early Warning System**: Alerts for unsupported content, auth requirements, rate limits
+- **URL Format Validation**: Strict format checking with error reporting
+- **Platform Detection**: Identifies 10+ platforms with detailed configurations
+- **Suspicious URL Detection**: Flags URL shorteners and suspicious TLDs
+- **Result Caching**: 500-entry cache for fast repeat analysis
+
+**Platform Coverage**:
+- Supported: YouTube (videos, shorts, live), TikTok, Instagram, X/Twitter, Snapchat, Tumblr
+- Detected but unsupported: Facebook, Reddit, Pinterest, Vimeo, Twitch, Dailymotion
+
+**Benefits**:
+- Faster rejection of unsupported URLs (no download attempt needed)
+- Better user feedback with predictions and warnings
+- Platform-specific optimizations improve success rate
+
+---
+
+### **2. Enhanced Bot Commands & Interactions** ✅
+**File**: `user_commands.py`
+
+**New Commands**:
+- **`/stats`** - Personal download statistics (total, by platform, success rate, recent activity)
+- **`/health`** - System health dashboard (CPU, memory, disk, database, security)
+- **`/queue`** - Download queue status (active downloads, available slots, wait estimates)
+- **`/cleanup`** - Admin file management (dry-run, execute, scan, statistics modes)
+- **`/security`** - Admin security dashboard (overview, user lookup, events, cleanup)
+- **Enhanced `/help`** - Interactive help with inline keyboard buttons and 6 topics:
+  - Platforms guide
+  - Commands reference
+  - Usage examples with code blocks
+  - Limits & configuration
+  - FAQ
+
+**Features**:
+- Inline keyboard navigation for help menu
+- Real-time system metrics via `psutil`
+- Comprehensive user statistics from database
+- Admin-only access control for cleanup & security commands
+
+---
+
+### **3. Advanced Rate Limiting & Queue Management** ✅
+**File**: `queue_manager.py`
+
+**Features**:
+- **Smart Queue Prioritization**: 4-level priority system (LOW, NORMAL, HIGH, URGENT)
+- **User Tier System**: 4 tiers based on download history and trust score:
+  - 🆕 **NEW** (0-9 downloads): 10/hr, 1 concurrent
+  - 👤 **REGULAR** (10-49 downloads): 12/hr, 1 concurrent
+  - ⭐ **TRUSTED** (50+ downloads, 75+ trust): 15/hr, 2 concurrent
+  - 👑 **VIP** (100+ downloads, 90+ trust): 20/hr, 3 concurrent
+- **Predictive Rate Limiting**: Behavior-based limits using user history
+- **Trust Score System**: Dynamic 0-100 score that adjusts with activity
+  - +2 per successful download
+  - -1 per failed download
+  - -5 for rapid requests (< 5s apart)
+  - +10 for 30+ day accounts
+  - +5 for consistent usage patterns
+- **Wait Time Estimation**: Queue position and estimated wait calculation
+- **Fair Usage Alerts**: Non-blocking notifications at 80% usage with suggestions
+- **Failure Rate Detection**: Automatic throttling when failure rate exceeds 30%
+- **Database Profile Loading**: User profiles pre-loaded from download history at startup
+- **Abuse Detection**: Flags and trust penalties for suspicious patterns
+
+**Benefits**:
+- Fair resource distribution based on user loyalty
+- Trusted users get priority access and higher limits
+- Automatic abuse mitigation through trust scoring
+- Better user experience with transparent tier system
+
+---
+
+### **4. Integration with Existing Systems** ✅
+
+#### **async_downloader.py Updates**:
+- Integrated URL validation before download processing
+- Smart rate limiting replaces basic hourly counter
+- Queue manager tracks all download lifecycle events
+- Fair usage alerts shown to approaching-limit users
+- URL analysis warnings displayed when relevant
+- Download duration and file size tracking for queue manager
+
+#### **enhanced_startup.py Updates**:
+- Queue manager initialization at startup
+- User profiles loaded from database history
+- Phase 2 features logged at startup
+
+#### **Backward Compatibility**:
+- All Phase 1 systems (error_recovery, file_manager, security_manager) unchanged
+- Existing rate limiting still available as fallback
+- Original `check_rate_limit()` function preserved
+- New systems are additive, not replacing Phase 1
+
+#### **New Dependency**:
+- `psutil==5.9.6` for system health monitoring
+
+---
+
+## 📊 **Phase 2 Performance Impact**
+
+| Metric | Phase 1 | Phase 2 | Improvement |
+|--------|---------|---------|-------------|
+| URL Processing | Download attempt | Pre-analysis | **Instant rejection of unsupported** |
+| Rate Limiting | Flat 10/hr | Tier-based 10-20/hr | **Fair distribution** |
+| User Experience | Basic commands | 6 new commands + interactive help | **Significantly enhanced** |
+| Abuse Prevention | Pattern detection | + Trust scoring | **Proactive prevention** |
+| System Monitoring | Log files | Real-time /health command | **Live visibility** |
+
+## 🎯 **Phase 2 User Benefits**
+
+### **For Regular Users**:
+- See personal statistics with `/stats`
+- Check system status with `/health`
+- Interactive help menu with examples
+- Fair usage notifications before hitting limits
+- Higher limits as they become trusted
+
+### **For Admins**:
+- Full system health monitoring
+- Manual cleanup control
+- Security overview and user lookup
+- Queue monitoring and management
+
+### **For System**:
+- Smarter resource allocation
+- Better abuse prevention
+- Predictive rate limiting
+- Comprehensive monitoring
+
+---
+
+*Enhancement Phase 2 completed on 2026-06-23*
+
+---
+
+## 🔧 **Post-Implementation Bug Fixes (2026-06-23)**
+
+### **Bug Fix 1: Orphaned Function Bodies in async_downloader.py** ✅
+**Severity:** Critical
+
+**Problem:** When `record_download_db` and `find_cached_file` were moved to `db.py` in Phase 1, the function bodies were left behind as orphaned indented code. Python's parser absorbed this dead code into the preceding `record_download()` function, causing a `NameError` at runtime (referencing undefined `conn`, `filename`, `url` variables).
+
+**Fix:** Removed the orphaned function bodies entirely. `record_download()` now contains only its intended logic.
+
+### **Bug Fix 2: Missing enhanced_help_command Import** ✅
+**Severity:** High
+
+**Problem:** `async_downloader.py` line 803 referenced `enhanced_help_command` in `start_bot()` but it was not imported from `user_commands`. This would cause a `NameError` at startup.
+
+**Fix:** Added `enhanced_help_command` to the import statement from `user_commands`.
+
+**Impact:** Bot would have failed to start via `start_bot()` / `enhanced_startup.py` without this fix.
