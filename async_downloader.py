@@ -789,6 +789,26 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await process_single_url(raw_url, update, context)
         except Exception as e:
             logger.exception(f"fatal error processing url {raw_url}: {e}")
+            
+            # Log fatal error to log channel
+            user = update.message.from_user
+            chat_id = update.message.chat_id
+            name = user.first_name or "User"
+            username = f"@{user.username or 'unknown'}"
+            
+            if settings.bot.log_channel_id:
+                try:
+                    now_local = datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p')
+                    failure_text = (f"ID: {chat_id}\nUser: {name} ({username})\nURL: {raw_url}\nTime: {now_local}\nStatus: ⚠️ FATAL ERROR\n"
+                                   f"Reason: {str(e)}\nLevel: Top-level exception handler")
+                    await context.bot.send_message(
+                        chat_id=settings.bot.log_channel_id,
+                        text=failure_text,
+                        disable_web_page_preview=True
+                    )
+                except Exception as log_e:
+                    logging.warning(f"send fatal error to log channel failed: {log_e}")
+            
             try:
                 await update.message.reply_text("⚠️ Unexpected error.")
             except Exception:
