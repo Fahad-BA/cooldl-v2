@@ -1,17 +1,7 @@
-import sqlite3, os, sys, traceback
+import sys, traceback
 
-# اجعل المسار مطلقًا
-DB_PATH = os.path.abspath(os.getenv("DATABASE", "cooldl.db"))
-
-def get_connection():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=20)
-    conn.row_factory = sqlite3.Row
-    try:
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA busy_timeout=20000;")
-    except Exception:
-        pass
-    return conn
+# Import unified database layer
+import db
 
 def _fetch(cur, sql, params=()):
     try:
@@ -30,7 +20,7 @@ def get_all_downloads(limit: int = 50):
       - filename (اسم الملف في الستوريج)
       - name (اسم اللي حمّل: users.name وإلا downloads.name)
     """
-    conn = get_connection()
+    conn = db.get_connection()
     cur = conn.cursor()
     rows = _fetch(cur, """
         SELECT
@@ -62,7 +52,7 @@ def get_all_downloads(limit: int = 50):
     ]
 
 def get_errors(limit: int = 50):
-    conn = get_connection()
+    conn = db.get_connection()
     cur = conn.cursor()
     rows = _fetch(cur, """
         SELECT COALESCE(error,'Unknown error') AS error, timestamp, file_id
@@ -74,7 +64,7 @@ def get_errors(limit: int = 50):
     return [{"error": r["error"], "timestamp": r["timestamp"], "file_id": r["file_id"]} for r in rows]
 
 def get_top_sources(limit: int = 5):
-    conn = get_connection()
+    conn = db.get_connection()
     cur = conn.cursor()
     rows = _fetch(cur, """
         SELECT source, COUNT(*) AS count
@@ -91,7 +81,7 @@ def get_questions(category: str = None, difficulty: str = None, limit: int = 50,
     """
     Get questions with optional filtering by category and difficulty
     """
-    conn = get_connection()
+    conn = db.get_connection()
     cur = conn.cursor()
     
     # Build the query dynamically based on parameters
@@ -136,7 +126,7 @@ def get_answers_for_question(question_id: int):
     """
     Get all answers for a specific question
     """
-    conn = get_connection()
+    conn = db.get_connection()
     cur = conn.cursor()
     
     rows = _fetch(cur, """
@@ -174,7 +164,7 @@ def create_question(question_text: str, category: str = "general", difficulty: s
     """
     Create a new question
     """
-    conn = get_connection()
+    conn = db.get_connection()
     cur = conn.cursor()
     
     try:
@@ -197,7 +187,7 @@ def create_answer(question_id: int, answer_text: str, is_correct: bool = False, 
     """
     Create a new answer for a question
     """
-    conn = get_connection()
+    conn = db.get_connection()
     cur = conn.cursor()
     
     try:

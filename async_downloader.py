@@ -15,6 +15,9 @@ from dotenv import load_dotenv
 # Import configuration
 from config import settings
 
+# Import unified database layer
+import db
+
 # Import blocking system
 from blocks import is_user_blocked, log_blocked_attempt
 
@@ -69,7 +72,6 @@ def get_ydl_opts(base_opts, is_shorts=False, is_tiktok=False):
 load_dotenv()
 
 # Use configuration system
-DB_PATH = settings.database.absolute_path
 COOKIES_FILE = settings.download.cookies_file.strip()
 DOWNLOAD_DIR = settings.download.download_dir_path
 
@@ -191,89 +193,20 @@ def record_download(chat_id: int):
     user_download_tracker[chat_id].append(datetime.datetime.now())
 
 # ================== DATABASE ==================
-def setup_database():
-    """Create database connection and ensure tables exist."""
-    c = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=settings.database.connection_timeout)
-    c.row_factory = sqlite3.Row
-    try:
-        c.execute(f"PRAGMA journal_mode={settings.database.journal_mode};")
-        c.execute(f"PRAGMA busy_timeout={settings.database.busy_timeout};")
-    except Exception:
-        pass
-    
-    cur = c.cursor()
-    cur.executescript("""
-    CREATE TABLE IF NOT EXISTS users (
-      chat_id INTEGER PRIMARY KEY,
-      name TEXT,
-      username TEXT,
-      created_at TEXT
-    );
-    CREATE TABLE IF NOT EXISTS downloads (
-      file_id TEXT,
-      timestamp TEXT,
-      username TEXT,
-      chat_id INTEGER,
-      name TEXT,
-      url TEXT,
-      source TEXT,
-      user_id TEXT,
-      filename TEXT,
-      file_size INTEGER
-    );
-    CREATE TABLE IF NOT EXISTS errors (
-      error TEXT,
-      file_id TEXT,
-      timestamp TEXT,
-      username TEXT,
-      chat_id INTEGER,
-      name TEXT,
-      url TEXT
-    );
-    CREATE TABLE IF NOT EXISTS logs (
-      timestamp TEXT,
-      action TEXT,
-      username TEXT,
-      chat_id INTEGER,
-      status TEXT
-    );
-    CREATE INDEX IF NOT EXISTS ix_downloads_url ON downloads(url);
-    CREATE INDEX IF NOT EXISTS ix_downloads_chat ON downloads(chat_id);
-    CREATE INDEX IF NOT EXISTS ix_downloads_timestamp ON downloads(timestamp);
-    """)
-    c.commit()
-    return c
+# Database functions moved to db.py
 
-def log_to_db(conn, table, values):
-    """Log entry to database table."""
-    cur = conn.cursor()
-    try:
-        if table == "downloads":
-            cur.execute("""INSERT INTO downloads
-                (user_id, url, filename, source, timestamp, chat_id, name, username, file_id, file_size, session)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)""", values)
-        elif table == "users":
-            cur.execute("INSERT OR IGNORE INTO users (chat_id, name, username, created_at) VALUES (?,?,?,?)", values)
-        elif table == "errors":
-            cur.execute("""INSERT INTO errors (error, file_id, timestamp, username, chat_id, name, url)
-                             VALUES (?,?,?,?,?,?,?)""", values)
-        elif table == "logs":
-            cur.execute("""INSERT INTO logs (timestamp, action, username, chat_id, status)
-                             VALUES (?,?,?,?,?)""", values)
-        conn.commit()
-    except Exception as e:
-        logger.error(f"DB logging error: {e}")
 
-def record_download_db(conn, user_id, url, filename, source, chat_id, name, username, file_id, session=None):
+
+# record_download_db moved to db.py
     """Record download to database."""
     try:
         file_size = (DOWNLOAD_DIR / filename).stat().st_size if (DOWNLOAD_DIR / filename).exists() else 0
     except:
         file_size = 0
-    log_to_db(conn, "downloads", (user_id, url, filename, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
+    db.log_to_db(conn, "downloads", (user_id, url, filename, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
                                     chat_id, name, username, file_id, file_size, session))
 
-def find_cached_file(conn, url: str) -> Optional[Path]:
+# find_cached_file moved to db.py
     """Find cached file by URL."""
     cur = conn.cursor()
     try:
@@ -414,9 +347,20 @@ async def download_cached(conn, cached: Path, source: str, chat_id: int,
         except Exception:
             pass
     record_download(chat_id)
-    record_download_db(conn, user_id, norm_url, cached.name, source, chat_id, name, username, file_id)
+    # Record download to database
+    try:
+        file_size = (DOWNLOAD_DIR / cached.name).stat().st_size if (DOWNLOAD_DIR / cached.name).exists() else 0
+    except:
+        file_size = 0
+    db.log_to_db(conn, "downloads", (user_id, norm_url, cached.name, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
+                                     chat_id, name, username, file_size, file_size, None))
     if raw_url != norm_url:
-        record_download_db(conn, user_id, raw_url, cached.name, source, chat_id, name, username, file_id)
+        try:
+            file_size = (DOWNLOAD_DIR / cached.name).stat().st_size if (DOWNLOAD_DIR / cached.name).exists() else 0
+        except:
+            file_size = 0
+        db.log_to_db(conn, "downloads", (user_id, raw_url, cached.name, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
+                                     chat_id, name, username, file_size, file_size, None))
 
 async def download_fresh(conn, norm_url: str, raw_url: str, source: str, chat_id: int,
                         user_id: int, name: str, username: str, file_id: str,
@@ -487,7 +431,7 @@ async def download_fresh(conn, norm_url: str, raw_url: str, source: str, chat_id
             await context.bot.delete_message(chat_id=chat_id, message_id=progress_msg.message_id)
         except Exception:
             pass
-        log_to_db(conn, "logs", (datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
+        db.log_to_db(conn, "logs", (datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
                                   "DownloadTimeout", username, chat_id, "Timeout"))
         return
     except Exception as e:
@@ -502,9 +446,9 @@ async def download_fresh(conn, norm_url: str, raw_url: str, source: str, chat_id
                                           text=f"❌ Error\n{name} ({username})\nID:{file_id}\nURL:{norm_url}\n\n{short_err}")
         except Exception:
             pass
-        log_to_db(conn, "errors", (short_err, file_id, datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
+        db.log_to_db(conn, "errors", (short_err, file_id, datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
                                     username, chat_id, name, norm_url))
-        log_to_db(conn, "logs", (datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
+        db.log_to_db(conn, "logs", (datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
                                 "DownloadFailed", username, chat_id, "Fail"))
         try:
             await context.bot.delete_message(chat_id=chat_id, message_id=progress_msg.message_id)
@@ -529,17 +473,28 @@ async def download_fresh(conn, norm_url: str, raw_url: str, source: str, chat_id
 
     record_download(chat_id)
     try:
-        record_download_db(conn, user_id, norm_url, final_path.name, source, chat_id, name, username, file_id)
+        # Record download to database
+        try:
+            file_size = (DOWNLOAD_DIR / final_path.name).stat().st_size if (DOWNLOAD_DIR / final_path.name).exists() else 0
+        except:
+            file_size = 0
+        db.log_to_db(conn, "downloads", (user_id, norm_url, final_path.name, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
+                                         chat_id, name, username, file_size, file_size, None))
         if raw_url != norm_url:
-            record_download_db(conn, user_id, raw_url, final_path.name, source, chat_id, name, username, file_id)
-        log_to_db(conn, "logs", (datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
+            try:
+                file_size = (DOWNLOAD_DIR / final_path.name).stat().st_size if (DOWNLOAD_DIR / final_path.name).exists() else 0
+            except:
+                file_size = 0
+            db.log_to_db(conn, "downloads", (user_id, raw_url, final_path.name, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
+                                             chat_id, name, username, file_size, file_size, None))
+        db.log_to_db(conn, "logs", (datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
                                 "Downloaded", username, chat_id, "Success"))
     except Exception as e:
         logging.warning(f"recording download failed: {e}")
 
 # ================== URL PROCESSING ==================
 async def process_single_url(raw_url: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    conn = setup_database()
+    conn = db.get_connection()
 
     user = update.message.from_user
     chat_id = update.message.chat_id
@@ -558,10 +513,10 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     is_tiktok = (source == "TikTok")
     file_id = ''.join(random.choices(string.digits, k=settings.random_id_length))
 
-    log_to_db(conn, "users", (chat_id, name, username, datetime.datetime.now(datetime.timezone.utc).isoformat()))
+    db.log_to_db(conn, "users", (chat_id, name, username, datetime.datetime.now(datetime.timezone.utc).isoformat()))
 
     # Check cache
-    cached = find_cached_file(conn, norm_url)
+    cached = db.find_cached_file(conn, norm_url)
     if cached:
         await download_cached(conn, cached, source, chat_id, user.id, name, username, norm_url, raw_url, file_id, context)
         conn.close()
@@ -631,7 +586,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ================== BOOTSTRAP ==================
 if __name__ == '__main__':
-    conn = setup_database()
+    conn = db.get_connection()
     conn.close()
     
     if not settings.bot.token:
