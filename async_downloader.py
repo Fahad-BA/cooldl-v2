@@ -25,10 +25,15 @@ from blocks import is_user_blocked, log_blocked_attempt
 BLOCK_MESSAGE = "You've been banned from using this bot."
 from admin_commands import get_admin_handlers
 
-# Import enhanced systems
+# Import enhanced systems (Phase 1)
 from error_recovery import download_with_retry, error_recovery
 from file_manager import file_manager
 from security_manager import security_manager, security_check_before_download, record_download_start, record_download_complete
+
+# Import Phase 2 systems
+from url_validator import url_validator, validate_and_analyze, pre_download_check
+from queue_manager import queue_manager, initialize_queue_manager, get_rate_limit_info, format_user_stats
+from user_commands import get_user_command_handlers, get_callback_handlers, help_callback_handler, enhanced_help_command
 
 
 def get_ydl_opts(base_opts, is_shorts=False, is_tiktok=False):
@@ -201,34 +206,6 @@ def record_download(chat_id: int):
 # Database functions moved to db.py
 
 
-
-# record_download_db moved to db.py
-    """Record download to database."""
-    try:
-        file_size = (DOWNLOAD_DIR / filename).stat().st_size if (DOWNLOAD_DIR / filename).exists() else 0
-    except:
-        file_size = 0
-    db.log_to_db(conn, "downloads", (user_id, url, filename, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
-                                    chat_id, name, username, file_id, file_size, session))
-
-# find_cached_file moved to db.py
-    """Find cached file by URL."""
-    cur = conn.cursor()
-    try:
-        cur.execute("SELECT filename FROM downloads WHERE url=? ORDER BY rowid DESC LIMIT 1", (url,))
-        row = cur.fetchone()
-        if not row:
-            # Try with stripped query
-            p = urlparse(url)
-            stripped = urlunparse((p.scheme or "https", (p.netloc or "").lower().lstrip("www."), p.path or "/", "", "", ""))
-            cur.execute("SELECT filename FROM downloads WHERE url=? ORDER BY rowid DESC LIMIT 1", (stripped,))
-            row = cur.fetchone()
-    finally:
-        pass
-    if not row or not row["filename"]:
-        return None
-    fp = DOWNLOAD_DIR / row["filename"]
-    return fp if fp.exists() else None
 
 # ================== LOG AGGREGATION ==================
 class CaptureLogger:
@@ -620,6 +597,22 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     name = user.first_name or "User"
     username = f"@{user.username or 'unknown'}"
 
+    # === Phase 2: Intelligent URL Validation ===
+    should_proceed, validation_msg, url_analysis = await pre_download_check(raw_url)
+    if not should_proceed:
+        await update.message.reply_text(f"❌ {validation_msg}")
+        conn.close()
+        return
+    
+    # Show URL analysis if there are warnings (non-blocking)
+    if url_analysis and url_analysis.warnings:
+        warning_text = url_validator.format_analysis_for_user(url_analysis)
+        if warning_text:
+            try:
+                await update.message.reply_text(warning_text, parse_mode='Markdown')
+            except Exception:
+                pass
+
     # Security check
     is_allowed, security_reason = await security_check_before_download(chat_id, raw_url)
     if not is_allowed:
@@ -627,12 +620,20 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
         conn.close()
         return
 
-    # Rate limit check
-    allowed, msg = check_rate_limit(chat_id)
-    if not allowed:
-        await update.message.reply_text(msg)
+    # === Phase 2: Smart Rate Limiting ===
+    rate_allowed, rate_msg, rate_details = get_rate_limit_info(chat_id)
+    if not rate_allowed:
+        await update.message.reply_text(rate_msg)
         conn.close()
         return
+    
+    # Check fair usage alerts (non-blocking, informational)
+    fair_usage_alert = queue_manager.get_fair_usage_alert(chat_id)
+    if fair_usage_alert:
+        try:
+            await update.message.reply_text(fair_usage_alert, parse_mode='Markdown')
+        except Exception:
+            pass
 
     norm_url, is_shorts = normalize_and_detect_url(raw_url)
     source = get_source(norm_url)
@@ -645,20 +646,43 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     cached = db.find_cached_file(conn, norm_url)
     if cached:
         await download_cached(conn, cached, source, chat_id, user.id, name, username, norm_url, raw_url, file_id, context)
+        # Record in queue manager
+        queue_manager.record_download_start(chat_id)
+        queue_manager.record_download_complete(chat_id, success=True, size_mb=cached.stat().st_size / (1024*1024) if cached.exists() else 0)
         conn.close()
         return
 
     # Fresh download
     async with download_semaphore:
-        # Record download start for security monitoring
+        # Record download start for security monitoring and queue manager
         await record_download_start(chat_id, norm_url)
+        queue_manager.record_download_start(chat_id)
+        download_start_time = time.time()
         
         # Use enhanced download with retry logic
         success = await download_fresh_enhanced(conn, norm_url, raw_url, source, chat_id, user.id, name, username, file_id, 
                                                 is_tiktok, is_shorts, context, update)
         
-        # Record download completion
+        # Calculate download duration
+        download_duration = time.time() - download_start_time
+        
+        # Get file size for stats
+        file_size_mb = 0
+        try:
+            # Find the downloaded file
+            for f in Path(DOWNLOAD_DIR).glob(f"*{file_id}*"):
+                file_size_mb = f.stat().st_size / (1024 * 1024)
+                break
+        except Exception:
+            pass
+        
+        # Record download completion (both Phase 1 security and Phase 2 queue)
         await record_download_complete(chat_id, norm_url, success)
+        queue_manager.record_download_complete(
+            chat_id, success=success, 
+            duration_s=download_duration, 
+            size_mb=file_size_mb
+        )
     
     conn.close()
 
@@ -748,13 +772,26 @@ def start_bot():
     
     app = ApplicationBuilder().token(settings.bot.token).request(req).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("help", enhanced_help_command))
     app.add_handler(CommandHandler("status", status_command))
     
-    # Add admin commands
+    # Add admin commands (Phase 1)
     admin_handlers = get_admin_handlers()
     for command, handler in admin_handlers:
         app.add_handler(CommandHandler(command, handler))
+    
+    # Add Phase 2 user commands
+    user_handlers = get_user_command_handlers()
+    for command, handler in user_handlers:
+        # Skip 'help' as it's already registered above
+        if command != 'help':
+            app.add_handler(CommandHandler(command, handler))
+    
+    # Add callback query handlers for interactive help
+    from telegram.ext import CallbackQueryHandler
+    callback_handlers = get_callback_handlers()
+    for pattern, handler in callback_handlers:
+        app.add_handler(CallbackQueryHandler(handler, pattern=pattern))
     
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
     

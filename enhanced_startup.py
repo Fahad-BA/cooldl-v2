@@ -16,6 +16,8 @@ from config import settings
 from file_manager import start_cleanup_scheduler, run_periodic_cleanup, file_manager
 from security_manager import security_manager
 from error_recovery import error_recovery
+from queue_manager import initialize_queue_manager
+from url_validator import url_validator
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,13 @@ class EnhancedCoolDLBot:
             # Initialize file tracking
             file_manager.initialize_file_tracking()
             logger.info("✅ File management system initialized")
+            
+            # === Phase 2: Initialize queue manager ===
+            await initialize_queue_manager()
+            logger.info("✅ Queue manager initialized (Phase 2)")
+            
+            # === Phase 2: URL validator (self-initializing) ===
+            logger.info("✅ URL validator ready (Phase 2)")
             
             # Scan download directory to update file tracking
             logger.info("📁 Scanning download directory...")
@@ -166,6 +175,9 @@ async def main():
         logger.info("   - 📁 Smart file management") 
         logger.info("   - 🛠️ Enhanced error recovery")
         logger.info("   - 🧹 Automatic file cleanup")
+        logger.info("   - 🔍 Intelligent URL validation (Phase 2)")
+        logger.info("   - 📋 Smart queue management (Phase 2)")
+        logger.info("   - 📊 Enhanced user commands (Phase 2)")
         
         # Keep the bot running
         while enhanced_bot.is_running:
