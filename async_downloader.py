@@ -740,6 +740,23 @@ if __name__ == '__main__':
         app.add_handler(CommandHandler(command, handler))
     
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
+
+def start_bot():
+    """Start the bot with enhanced features."""
+    # Create app instance
+    req = HTTPXRequest(connect_timeout=settings.telegram.request_connect_timeout, read_timeout=settings.telegram.request_read_timeout)
+    
+    app = ApplicationBuilder().token(settings.bot.token).request(req).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("status", status_command))
+    
+    # Add admin commands
+    admin_handlers = get_admin_handlers()
+    for command, handler in admin_handlers:
+        app.add_handler(CommandHandler(command, handler))
+    
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
     
     # Enhanced polling with conflict handling
     max_retries = settings.telegram.polling_max_retries
@@ -760,3 +777,8 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             raise
+
+
+# Enhanced startup
+if __name__ == '__main__':
+    start_bot()
