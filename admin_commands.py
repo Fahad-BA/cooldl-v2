@@ -11,6 +11,7 @@ from blocks import (
     check_user_block_status,
     is_user_blocked
 )
+from user_commands import health_command
 
 async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /block command to block a user."""
@@ -173,6 +174,7 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def get_admin_handlers():
     """Return list of admin command handlers."""
     return [
+        ('health', health_command),
         ('block', block_command),
         ('unblock', unblock_command),
         ('blocked', blocked_list_command),
