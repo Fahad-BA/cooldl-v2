@@ -3,6 +3,11 @@ import sys, traceback
 # Import unified database layer
 import db
 
+# Convenience function for backward compatibility
+def get_connection():
+    """Alias for db.get_connection() for backward compatibility."""
+    return db.get_connection()
+
 def _fetch(cur, sql, params=()):
     try:
         cur.execute(sql, params)

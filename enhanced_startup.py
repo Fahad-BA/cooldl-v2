@@ -183,13 +183,13 @@ async def main():
 def run_enhanced_bot():
     """Run the enhanced bot with proper error handling."""
     try:
-        # Import and run the original bot
-        from async_downloader import main as original_main
+        # Import the bot components
+        from async_downloader import start_bot
         
-        logger.info("🔄 Starting original bot with enhanced features...")
+        logger.info("🔄 Starting enhanced bot...")
         
-        # Run original bot main function
-        asyncio.run(main())
+        # Start the bot with enhanced features
+        start_bot()
         
     except Exception as e:
         logger.error(f"Failed to run enhanced bot: {e}")
