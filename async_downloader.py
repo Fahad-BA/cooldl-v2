@@ -758,6 +758,12 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("status", status_command))
     
+    # Add user commands
+    from user_commands import get_user_command_handlers
+    user_handlers = get_user_command_handlers()
+    for command, handler in user_handlers:
+        app.add_handler(CommandHandler(command, handler))
+    
     # Add admin commands
     admin_handlers = get_admin_handlers()
     for command, handler in admin_handlers:

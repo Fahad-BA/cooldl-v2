@@ -1,7 +1,7 @@
 """
 Enhanced User Commands for CoolDL Phase 2
 Provides new bot commands for statistics, health monitoring, queue status,
-manual cleanup, security status, and enhanced help with interactive examples.
+manual cleanup, security status, enhanced help, and commands list.
 """
 
 import logging
@@ -48,6 +48,89 @@ if OWNER_ID:
 def is_admin(chat_id: int) -> bool:
     """Check if user is an admin."""
     return chat_id in ADMIN_IDS
+
+
+# ==================== /commands COMMAND ====================
+
+def _format_commands_list(chat_id: int, is_admin: bool) -> str:
+    """Format a comprehensive list of all available commands."""
+    
+    # Basic Commands
+    basic_commands = [
+        ("/start", "Start the bot and get basic info"),
+        ("/help", "Interactive help menu with detailed guides"),
+        ("/stats", "Your personal download statistics"),
+        ("/queue", "Download queue status and information"),
+        ("/commands", "List all available commands"),
+    ]
+    
+    message = "📋 **Available Commands**\n\n"
+    
+    # Basic Commands Section
+    message += "### 🟢 **Basic Commands**\n"
+    for cmd, desc in basic_commands:
+        message += f"  `{cmd}` - {desc}\n"
+    
+    # Admin Commands Section
+    if is_admin:
+        admin_commands = [
+            ("/cleanup", "File management and cleanup controls"),
+            ("/cleanup stats", "View file cleanup statistics"),
+            ("/cleanup dry", "Preview cleanup without executing"),
+            ("/cleanup exe", "Execute file cleanup"),
+            ("/cleanup protect", "Protect files from cleanup"),
+            ("/cleanup unprotect", "Unprotect files for cleanup"),
+            ("/security", "Security admin dashboard"),
+            ("/security user", "Check user security status"),
+            ("/security events", "Recent security events"),
+            ("/security cleanup", "Clean old security data"),
+        ]
+        
+        message += "\n### 🔴 **Admin Commands**\n"
+        message += "*You have admin privileges*\n\n"
+        for cmd, desc in admin_commands:
+            message += f"  `{cmd}` - {desc}\n"
+    
+    # Usage Examples
+    message += "\n### 💡 **Quick Examples**\n"
+    message += "  • Send me a video link to download\n"
+    message += "  • Use `/stats` to see your download history\n"
+    message += "  • Try `/health` to check system status\n"
+    message += "  • Use `/help` for detailed platform guides\n"
+    
+    # Tips
+    message += "\n### 📝 **Tips**\n"
+    message += "  • I support YouTube, TikTok, Instagram, Twitter/X, and more\n"
+    message += "  • Rate limits apply based on your user tier\n"
+    message += "  • Large files may take longer to download\n"
+    
+    if is_admin:
+        message += "  • Use `/cleanup` to manage disk space\n"
+        message += "  • Monitor security with `/security`\n"
+    
+    # Footer
+    message += "\n━━━━━━━━━━━━━━━━━━\n"
+    message += "💬 *Need more help? Use `/help` for detailed guides!*\n"
+    
+    return message
+
+
+async def commands_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """List all available commands with descriptions."""
+    try:
+        chat_id = update.effective_chat.id
+        is_admin_user = is_admin(chat_id)
+        
+        message = _format_commands_list(chat_id, is_admin_user)
+        
+        await update.message.reply_text(
+            message,
+            parse_mode='Markdown'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in commands command: {e}")
+        await update.message.reply_text("❌ Failed to get commands list.")
 
 
 # ==================== /stats COMMAND ====================
@@ -190,7 +273,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Show system health status.
+    Show system health status (admin only).
     
     Displays:
     - Bot uptime
@@ -202,6 +285,11 @@ async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     try:
         chat_id = update.effective_chat.id
+        
+        # Check if user is admin
+        if not is_admin(chat_id):
+            await update.message.reply_text("❌ This command is only available to administrators.")
+            return
         lines = ["🏥 **System Health Status**\n"]
         
         # CPU usage
@@ -621,6 +709,90 @@ async def security_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Failed to get security status.")
 
 
+# ==================== /commands COMMAND ====================
+
+def _format_commands_list(chat_id: int, is_admin: bool) -> str:
+    """Format a comprehensive list of all available commands."""
+    
+    # Basic Commands
+    basic_commands = [
+        ("/start", "Start the bot and get basic info"),
+        ("/help", "Interactive help menu with detailed guides"),
+        ("/stats", "Your personal download statistics"),
+        ("/health", "System health status dashboard"),
+        ("/queue", "Download queue status and information"),
+        ("/commands", "List all available commands"),
+    ]
+    
+    message = "📋 **Available Commands**\n\n"
+    
+    # Basic Commands Section
+    message += "### 🟢 **Basic Commands**\n"
+    for cmd, desc in basic_commands:
+        message += f"  `{cmd}` - {desc}\n"
+    
+    # Admin Commands Section
+    if is_admin:
+        admin_commands = [
+            ("/cleanup", "File management and cleanup controls"),
+            ("/cleanup stats", "View file cleanup statistics"),
+            ("/cleanup dry", "Preview cleanup without executing"),
+            ("/cleanup exe", "Execute file cleanup"),
+            ("/cleanup protect", "Protect files from cleanup"),
+            ("/cleanup unprotect", "Unprotect files for cleanup"),
+            ("/security", "Security admin dashboard"),
+            ("/security user", "Check user security status"),
+            ("/security events", "Recent security events"),
+            ("/security cleanup", "Clean old security data"),
+        ]
+        
+        message += "\n### 🔴 **Admin Commands**\n"
+        message += "*You have admin privileges*\n\n"
+        for cmd, desc in admin_commands:
+            message += f"  `{cmd}` - {desc}\n"
+    
+    # Usage Examples
+    message += "\n### 💡 **Quick Examples**\n"
+    message += "  • Send me a video link to download\n"
+    message += "  • Use `/stats` to see your download history\n"
+    message += "  • Try `/health` to check system status\n"
+    message += "  • Use `/help` for detailed platform guides\n"
+    
+    # Tips
+    message += "\n### 📝 **Tips**\n"
+    message += "  • I support YouTube, TikTok, Instagram, Twitter/X, and more\n"
+    message += "  • Rate limits apply based on your user tier\n"
+    message += "  • Large files may take longer to download\n"
+    
+    if is_admin:
+        message += "  • Use `/cleanup` to manage disk space\n"
+        message += "  • Monitor security with `/security`\n"
+    
+    # Footer
+    message += "\n━━━━━━━━━━━━━━━━━━\n"
+    message += "💬 *Need more help? Use `/help` for detailed guides!*"
+    
+    return message
+
+
+async def commands_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """List all available commands with descriptions."""
+    try:
+        chat_id = update.effective_chat.id
+        is_admin_user = is_admin(chat_id)
+        
+        message = _format_commands_list(chat_id, is_admin_user)
+        
+        await update.message.reply_text(
+            message,
+            parse_mode='Markdown'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in commands command: {e}")
+        await update.message.reply_text("❌ Failed to get commands list.")
+
+
 # ==================== ENHANCED /help COMMAND ====================
 
 async def enhanced_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -787,8 +959,8 @@ def get_user_command_handlers():
     """
     return [
         ('stats', stats_command),
-        ('health', health_command),
         ('queue', queue_command),
+        ('commands', commands_command),
         ('cleanup', cleanup_command),
         ('security', security_command),
         ('help', enhanced_help_command),  # Override existing help
