@@ -25,6 +25,11 @@ from blocks import is_user_blocked, log_blocked_attempt
 BLOCK_MESSAGE = "You've been banned from using this bot."
 from admin_commands import get_admin_handlers
 
+# Import enhanced systems
+from error_recovery import download_with_retry, error_recovery
+from file_manager import file_manager
+from security_manager import security_manager, security_check_before_download, record_download_start, record_download_complete
+
 
 def get_ydl_opts(base_opts, is_shorts=False, is_tiktok=False):
     """Get optimized yt-dlp options for different platforms."""
@@ -492,6 +497,120 @@ async def download_fresh(conn, norm_url: str, raw_url: str, source: str, chat_id
     except Exception as e:
         logging.warning(f"recording download failed: {e}")
 
+
+async def download_fresh_enhanced(conn, norm_url: str, raw_url: str, source: str, chat_id: int,
+                               user_id: int, name: str, username: str, file_id: str,
+                               is_tiktok: bool, is_shorts: bool, context: ContextTypes.DEFAULT_TYPE,
+                               update: Update):
+    """Enhanced fresh download with error recovery and security features."""
+    progress_msg = await update.message.reply_text("⏳ Downloading...")
+    caplog = CaptureLogger()
+    filename = f"File{''.join(random.choices(string.digits, k=settings.random_id_length))}"
+    outtmpl = str(DOWNLOAD_DIR / f"{filename}.%(ext)s")
+
+    # Set up ydl_opts
+    base_opts = {
+        'outtmpl': outtmpl,
+        'format': 'bv*+ba/b',
+        'recode-video': 'mp4',
+        'postprocessors': [{
+            'key': 'FFmpegVideoRemuxer',
+            'preferedformat': 'mp4',
+        }],
+        'noplaylist': True,
+        'quiet': True,
+        'logger': caplog,
+        'retries': settings.download.retries,
+        'concurrent_fragment_downloads': settings.download.concurrent_fragments,
+        'socket_timeout': settings.download.socket_timeout,
+        'http_headers': {'User-Agent': settings.telegram.user_agent}
+    }
+    
+    ydl_opts = get_ydl_opts(base_opts, is_shorts=is_shorts, is_tiktok=is_tiktok)
+    
+    if is_tiktok:
+        ydl_opts['extractor_args'] = {'tiktok': ['impersonate=webkit']}
+        ydl_opts['http_headers']['Referer'] = settings.telegram.tiktok_referer
+    
+    if COOKIES_FILE and os.path.exists(COOKIES_FILE):
+        ydl_opts['cookiefile'] = COOKIES_FILE
+
+    async def enhanced_do_download(url: str, timeout: int = settings.download.timeout_seconds) -> Path:
+        loop = asyncio.get_running_loop()
+        def run():
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                fp = Path(ydl.prepare_filename(info))
+                if not fp.exists():
+                    matches = list(DOWNLOAD_DIR.glob(f"{filename}.*"))
+                    if not matches:
+                        raise FileNotFoundError("Output file not found.")
+                    return matches[0]
+                return fp
+        return await asyncio.wait_for(loop.run_in_executor(None, run), timeout=timeout)
+
+    # Use enhanced error recovery
+    async def download_with_enhanced_recovery(url: str) -> Optional[Path]:
+        return await download_with_retry(url, chat_id, context, enhanced_do_download, conn)
+
+    try:
+        # Try normalized URL first
+        final_path = await download_with_enhanced_recovery(norm_url)
+        if not final_path:
+            # If normalized URL fails, try raw URL
+            logger.info(f"Normalized URL failed, trying raw URL: {raw_url}")
+            final_path = await download_with_enhanced_recovery(raw_url)
+            
+        if not final_path:
+            # All attempts failed
+            logger.error(f"All download attempts failed for: {norm_url}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Unexpected error in download: {e}")
+        return False
+
+    # Delete progress message
+    try:
+        await context.bot.delete_message(chat_id=chat_id, message_id=progress_msg.message_id)
+    except Exception as e:
+        logging.warning(f"delete progress msg failed: {e}")
+
+    # Deliver file
+    ok = await deliver_file(conn, final_path, source, chat_id, user_id, name, username, norm_url, context, is_cache=False)
+    if not ok:
+        try:
+            await context.bot.send_message(chat_id=chat_id, text="⚠️ Sending failed.")
+        except Exception:
+            pass
+        return False
+
+    # Record file access for smart file management
+    file_manager.record_file_access(final_path.name)
+    
+    record_download(chat_id)
+    try:
+        # Record download to database
+        try:
+            file_size = (DOWNLOAD_DIR / final_path.name).stat().st_size if (DOWNLOAD_DIR / final_path.name).exists() else 0
+        except:
+            file_size = 0
+        db.log_to_db(conn, "downloads", (user_id, norm_url, final_path.name, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
+                                         chat_id, name, username, file_size, file_size, None))
+        if raw_url != norm_url:
+            try:
+                file_size = (DOWNLOAD_DIR / final_path.name).stat().st_size if (DOWNLOAD_DIR / final_path.name).exists() else 0
+            except:
+                file_size = 0
+            db.log_to_db(conn, "downloads", (user_id, raw_url, final_path.name, source, datetime.datetime.now(datetime.timezone.utc).isoformat(), 
+                                             chat_id, name, username, file_size, file_size, None))
+        db.log_to_db(conn, "logs", (datetime.datetime.now(pytz.timezone(settings.timezone)).strftime('%Y/%m/%d, %I:%M %p'), 
+                                "Downloaded", username, chat_id, "Success"))
+    except Exception as e:
+        logging.warning(f"recording download failed: {e}")
+    
+    return True
+
 # ================== URL PROCESSING ==================
 async def process_single_url(raw_url: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn = db.get_connection()
@@ -500,6 +619,13 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
     chat_id = update.message.chat_id
     name = user.first_name or "User"
     username = f"@{user.username or 'unknown'}"
+
+    # Security check
+    is_allowed, security_reason = await security_check_before_download(chat_id, raw_url)
+    if not is_allowed:
+        await update.message.reply_text(f"🚫 {security_reason}")
+        conn.close()
+        return
 
     # Rate limit check
     allowed, msg = check_rate_limit(chat_id)
@@ -524,8 +650,15 @@ async def process_single_url(raw_url: str, update: Update, context: ContextTypes
 
     # Fresh download
     async with download_semaphore:
-        await download_fresh(conn, norm_url, raw_url, source, chat_id, user.id, name, username, file_id, 
-                            is_tiktok, is_shorts, context, update)
+        # Record download start for security monitoring
+        await record_download_start(chat_id, norm_url)
+        
+        # Use enhanced download with retry logic
+        success = await download_fresh_enhanced(conn, norm_url, raw_url, source, chat_id, user.id, name, username, file_id, 
+                                                is_tiktok, is_shorts, context, update)
+        
+        # Record download completion
+        await record_download_complete(chat_id, norm_url, success)
     
     conn.close()
 
