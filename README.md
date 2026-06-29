@@ -40,8 +40,12 @@
 
 ### 🛡️ **Advanced Security & Management**
 - **User Blocking System** 🚫 - Comprehensive admin controls with real-time monitoring
-- **Rate Limiting** ⏱️ - Configurable per-user download limits (10/hour default)
-- **Smart Error Handling** 🛠️ - Comprehensive logging and automatic recovery
+- **Smart Rate Limiting** ⏱️ - Tier-based limits (10-20/hour) with trust scoring and predictive behavior analysis
+- **Error Recovery System** 🛠️ - Smart retry logic with exponential backoff and error classification
+- **Security Manager** 🛡️ - Suspicious pattern detection, URL safety validation, and user risk scoring
+- **File Management** 📁 - Automated cleanup with disk space monitoring and file protection
+- **Queue Manager** 📋 - Priority-based download queue with user tiers (NEW, REGULAR, TRUSTED, VIP)
+- **URL Validator** 🔗 - Pre-download URL analysis with platform detection and content type prediction
 - **Session Management** 🔐 - Secure user sessions with IP tracking
 
 ### 📊 **Real-Time Dashboard**
@@ -131,40 +135,59 @@ cp .env.example .env
 
 5. **Initialize database**
 ```bash
-python3 -c "from database import init_db; init_db()"
+python3 -c "from db import setup_database; setup_database()"
 ```
 
 6. **Start the bot**
 ```bash
-# Start the Telegram bot
-python3 async_downloader.py &
+# Option A: Enhanced startup (recommended - includes Phase 1 & 2 systems)
+python3 enhanced_startup.py
 
-# Start the web dashboard
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
+# Option B: Manual start
+python3 async_downloader.py &  # Telegram bot
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8000  # Web dashboard
 ```
 
 ### 🔧 **Configuration**
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root (see `.env.example` for all options):
 
 ```env
-# Bot Configuration
+# Bot Settings
 BOT_TOKEN=your_telegram_bot_token
-CHANNEL_ID=your_channel_id
-LOG_CHANNEL_ID=your_log_channel_id
+CHANNEL_ID=0
+LOG_CHANNEL_ID=0
+CAPTION=
 
-# Database Configuration
-DATABASE_URL=sqlite:///cooldl.db
+# Database Settings
+DATABASE=cooldl.db
+DB_CONNECTION_TIMEOUT=20
+DB_JOURNAL_MODE=WAL
 
-# Rate Limiting (per hour)
+# Rate Limiting & Concurrency
 MAX_DOWNLOADS_PER_HOUR=10
-
-# File Management
+MAX_CONCURRENT=3
 MAX_FILE_SIZE=500  # MB
 FILE_RETENTION_DAYS=7
 
-# Admin Configuration
+# Download Settings
+DOWNLOAD_TIMEOUT=300
+DOWNLOAD_RETRIES=5
+CONCURRENT_FRAGMENTS=4
+
+# Web Dashboard
+SESSION_SECRET=your_secret_key_here
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your_password_here
+
+# Admin Telegram IDs (comma-separated, for bot admin commands)
 ADMIN_IDS=123456789,987654321
+
+# General
+LOG_LEVEL=INFO
+TIMEZONE=Asia/Riyadh
+CLEANUP_ENABLED=false
+CLEANUP_INTERVAL_HOURS=24
 ```
 
 ---
@@ -198,8 +221,15 @@ ADMIN_IDS=123456789,987654321
 
 ### 🔌 **Bot Commands**
 - **Basic Usage**: Send a video URL to download
-- **Help**: `/help` - Shows supported platforms
+- **Help**: `/help` - Interactive help menu with platform guides, commands, examples, and FAQ
+- **User Commands**:
+  - `/stats` - Personal download statistics (total, by platform, success rate)
+  - `/queue` - Download queue status and estimated wait time
+  - `/commands` - List available commands based on your access level
 - **Admin Commands**:
+  - `/health` - System health dashboard (CPU, memory, disk, database, security)
+  - `/cleanup` - File management (dry-run, execute, scan, statistics modes)
+  - `/security` - Security dashboard (overview, user lookup, events, cleanup)
   - `/block <user>` - Block a user
   - `/unblock <user>` - Unblock a user
   - `/blocked` - Show blocked users list
@@ -207,17 +237,25 @@ ADMIN_IDS=123456789,987654321
 
 ### 🌐 **Web API**
 ```python
-# Get dashboard stats
+# Dashboard (HTML)
 GET /dashboard
 
-# Get recent downloads
-GET /api/downloads
+# Health check
+GET /healthz
 
-# Get error logs
-GET /api/errors
+# Authentication
+GET /login
+POST /login
+GET /logout
 
-# Get users data
-GET /api/users
+# API endpoints (JSON)
+GET /api/downloads    # Recent downloads
+GET /api/errors       # Error logs
+GET /api/users        # Users data
+
+# Admin actions
+POST /download        # Trigger download from dashboard
+POST /restart-bot     # Restart the bot process
 ```
 
 ---
@@ -226,25 +264,39 @@ GET /api/users
 
 ### 🔄 **System Components**
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Telegram Bot  │────│   Web Dashboard │────│   SQLite DB    │
-│ (async_downloader) │    │   (FastAPI)     │    │   (cooldl.db)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                │
-                    ┌─────────────────┐
-                    │ Blocking System │
-                    │ (blocks.py)     │
-                    └─────────────────┘
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│    Telegram Bot     │────│    Web Dashboard    │────│    SQLite Database  │
+│ (async_downloader)  │    │     (FastAPI)       │    │    (cooldl.db)      │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+         │                          │                          │
+         └──────────────────────────┼──────────────────────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │                         │                         │
+┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│  Error Recovery  │   │  File Manager    │   │ Security Manager │
+│(error_recovery)  │   │ (file_manager)   │   │(security_manager)│
+└──────────────────┘   └──────────────────┘   └──────────────────┘
+          │                         │                         │
+┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│  URL Validator   │   │  Queue Manager   │   │   DB Layer       │
+│ (url_validator)  │   │ (queue_manager)  │   │     (db.py)      │
+└──────────────────┘   └──────────────────┘   └──────────────────┘
+          │
+┌──────────────────┐   ┌──────────────────┐
+│  User Commands   │   │ Blocking System  │
+│ (user_commands)  │   │   (blocks.py)    │
+└──────────────────┘   └──────────────────┘
 ```
 
 ### 🎯 **Key Features**
 - **Self-Hosted**: Complete control over your data and privacy
 - **Scalable**: Handles multiple concurrent downloads efficiently
-- **Secure**: User authentication and admin controls
+- **Secure**: Multi-layered security with user authentication, trust scoring, and admin controls
 - **Extensible**: Easy to add new platforms and features
-- **Reliable**: Comprehensive error handling and logging
+- **Reliable**: Smart error recovery with automatic retry logic
+- **Smart Queue**: Priority-based download queue with user tier system
+- **Intelligent URL Validation**: Pre-download analysis and platform detection
 
 ---
 
@@ -269,17 +321,7 @@ tail -f async_downloader.log
 tail -f server.log
 ```
 
-### 📚 **Testing**
-```bash
-# Run unit tests
-python3 -m pytest
-
-# Test blocking system
-python3 test_blocking_system.py
-
-# Test dashboard
-python3 test_dashboard.py
-```
+> **Note:** For details on Phase 1 & 2 enhancements, see [ENHANCEMENT_LOG.md](ENHANCEMENT_LOG.md)
 
 ---
 
