@@ -26,7 +26,7 @@ class DatabaseSettings(BaseModel):
 class BotSettings(BaseModel):
     """Telegram bot configuration settings."""
     
-    token: str = Field(default="dummy_token_for_development")
+    token: str = Field(default="")
     channel_id: int = Field(default=0)
     log_channel_id: int = Field(default=0)
     caption: str = Field(default="")
@@ -81,8 +81,8 @@ class WebSettings(BaseModel):
     restart_endpoint: str = Field(default="http://localhost:7070/restart")
     
     # Admin credentials
-    admin_username: str = Field(default="Fahad")
-    admin_password: str = Field(default="PASSWORD_REMOVED")
+    admin_username: str = Field(default="")
+    admin_password: str = Field(default="")
 
 
 class TelegramSettings(BaseModel):
@@ -168,7 +168,7 @@ def get_settings() -> Settings:
             journal_mode=os.getenv("DB_JOURNAL_MODE", "WAL")
         ),
         bot=BotSettings(
-            token=os.getenv("BOT_TOKEN", "dummy_token_for_development"),
+            token=os.environ["BOT_TOKEN"],
             channel_id=int(os.getenv("CHANNEL_ID", "0")),
             log_channel_id=int(os.getenv("LOG_CHANNEL_ID", "0")),
             caption=os.getenv("CAPTION", "")
@@ -189,11 +189,11 @@ def get_settings() -> Settings:
             socket_timeout=int(os.getenv("SOCKET_TIMEOUT", "30"))
         ),
         web=WebSettings(
-            session_secret=os.getenv("SESSION_SECRET", "SECRET_REMOVED"),
+            session_secret=os.environ["SESSION_SECRET"],
             items_per_page=int(os.getenv("ITEMS_PER_PAGE", "50")),
             restart_endpoint=os.getenv("RESTART_ENDPOINT", "http://localhost:7070/restart"),
-            admin_username=os.getenv("ADMIN_USERNAME", "Fahad"),
-            admin_password=os.getenv("ADMIN_PASSWORD", "PASSWORD_REMOVED")
+            admin_username=os.environ["ADMIN_USERNAME"],
+            admin_password=os.environ["ADMIN_PASSWORD"]
         ),
         telegram=TelegramSettings(
             request_connect_timeout=int(os.getenv("TELEGRAM_CONNECT_TIMEOUT", "20")),
