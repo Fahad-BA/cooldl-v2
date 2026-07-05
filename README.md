@@ -5,6 +5,8 @@
   <img src="https://img.shields.io/badge/python-3.11%2B-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge&logo=github&logoColor=white" alt="License">
   <img src="https://img.shields.io/badge/platform-linux-lightgrey?style=for-the-badge&logo=linux&logoColor=white" alt="Platform">
+  <img src="https://img.shields.io/badge/python--telegram--bot-20.7-blue?style=for-the-badge&logo=telegram&logoColor=white" alt="python-telegram-bot">
+  <img src="https://img.shields.io/badge/yt--dlp-2023.12.30-red?style=for-the-badge&logo=youtube&logoColor=white" alt="yt-dlp">
   <img src="https://img.shields.io/badge/vibe_coded-purple?style=for-the-badge&logo=sparkles&logoColor=white" alt="Vibe Coded">
 </p>
 
@@ -145,7 +147,7 @@ python3 enhanced_startup.py
 
 # Option B: Manual start
 python3 async_downloader.py &  # Telegram bot
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8000  # Web dashboard
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8001  # Web dashboard
 ```
 
 ### 🔧 **Configuration**
