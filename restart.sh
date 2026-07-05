@@ -31,8 +31,8 @@ pkill -f "async_downloader.py" || true
 sleep 2
 
 # Kill any process still running on port 8000 (force kill)
-echo "💥 Force killing port 8000..."
-echo "213325" | sudo -S lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+echo "💥 Force killing port 8001..."
+echo "213325" | sudo -S lsof -ti:8001 | xargs kill -9 2>/dev/null || true
 sleep 1
 
 # Start services via systemctl (recommended way)
@@ -56,7 +56,7 @@ echo "   Bot Service: $BOT_STATUS"
 if [ "$WEB_STATUS" != "active" ]; then
     echo "⚠️  Web service not active, starting manually..."
     source venv/bin/activate
-    nohup uvicorn main:app --host 0.0.0.0 --port 8000 > web.log 2>&1 &
+    nohup uvicorn main:app --host 0.0.0.0 --port 8001 > web.log 2>&1 &
     WEB_PID=$!
     echo "✅ Web service started manually (PID: $WEB_PID)"
 fi
