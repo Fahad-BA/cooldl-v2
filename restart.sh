@@ -30,7 +30,7 @@ pkill -f "async_downloader.py" || true
 # Wait for processes to die
 sleep 2
 
-# Kill any process still running on port 8000 (force kill)
+# Kill any process still running on port 8001 (force kill)
 echo "💥 Force killing port 8001..."
 echo "213325" | sudo -S lsof -ti:8001 | xargs kill -9 2>/dev/null || true
 sleep 1
