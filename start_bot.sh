@@ -12,8 +12,8 @@ pkill -f "uvicorn main:app" 2>/dev/null || true
 pkill -f "async_downloader.py" 2>/dev/null || true
 
 # Start web interface
-echo "Starting web interface on port 8001..."
-nohup /home/fahad/cooldl/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8001 > /dev/null 2>&1 &
+echo "Starting web interface on port 8000..."
+nohup /home/fahad/cooldl/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 > /dev/null 2>&1 &
 WEB_PID=$!
 
 # Start Telegram bot

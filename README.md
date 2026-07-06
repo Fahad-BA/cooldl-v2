@@ -147,7 +147,7 @@ python3 enhanced_startup.py
 
 # Option B: Manual start
 python3 async_downloader.py &  # Telegram bot
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8001  # Web dashboard
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8000  # Web dashboard
 ```
 
 ### 🔧 **Configuration**
