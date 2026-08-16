@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge&logo=github&logoColor=white" alt="License">
   <img src="https://img.shields.io/badge/platform-linux-lightgrey?style=for-the-badge&logo=linux&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/python--telegram--bot-20.7-blue?style=for-the-badge&logo=telegram&logoColor=white" alt="python-telegram-bot">
-  <img src="https://img.shields.io/badge/yt--dlp-2023.12.30-red?style=for-the-badge&logo=youtube&logoColor=white" alt="yt-dlp">
+  <img src="https://img.shields.io/badge/yt--dlp-auto--updated%20weekly-red?style=for-the-badge&logo=youtube&logoColor=white" alt="yt-dlp">
   <img src="https://img.shields.io/badge/vibe_coded-purple?style=for-the-badge&logo=sparkles&logoColor=white" alt="Vibe Coded">
 </p>
 
@@ -303,6 +303,17 @@ POST /restart-bot     # Restart the bot process
 ---
 
 ## 🔧 **Development**
+
+### ⬆️ **Keeping yt-dlp Updated**
+
+The repo ships [`update_ytdlp.sh`](update_ytdlp.sh) — a weekly script that upgrades
+`yt-dlp` in the project venv, restarts `cooldl-bot.service`, and logs to
+`ytdlp_update.log`. Schedule it with cron (e.g. weekly):
+
+```bash
+crontab -e
+# 0 4 * * 1  /home/fahad/cooldl/update_ytdlp.sh
+```
 
 ### 🤝 **Contributing**
 1. Fork the repository
